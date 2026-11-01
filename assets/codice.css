@@ -1,5 +1,5 @@
 /* ==========================================================================
-   DOCMETRY · EDERUS — almanaque del Survival
+   CÓDICE · EDERUS — guía del Survival
    Dirección: libro de campo impreso + interfaz nativa de Minecraft.
    Esquinas rectas, bordes de 2px, sombras de bloque, colores de formato (§).
    Archivo (titulares condensados y texto) · Silkscreen (etiquetas pixel)
@@ -139,7 +139,7 @@ main{min-width:0;padding:0 var(--gut)}
 .mast__rule .live::before{content:"";display:inline-block;width:8px;height:8px;background:var(--mc-a);margin-right:8px;animation:blink 1s steps(2,start) infinite}
 @keyframes blink{to{visibility:hidden}}
 .mast__word{container-type:inline-size;padding:clamp(14px,2vw,26px) 0 clamp(10px,1.2vw,16px);border-bottom:1px solid var(--stone)}
-.mast__word h1{margin:0;font:900 22.4cqi/.78 var(--f-head);font-stretch:62%;letter-spacing:-.01em;text-transform:uppercase;white-space:nowrap;display:flex;justify-content:space-between}
+.mast__word h1{margin:0;font:900 30cqi/.8 var(--f-head);padding-top:7cqi;font-stretch:62%;letter-spacing:-.01em;text-transform:uppercase;white-space:nowrap;display:flex;justify-content:space-between}
 .mast__word h1 span{display:inline-block;transform:translateY(14%);opacity:0;transition:transform .4s steps(4,end),opacity .4s steps(4,end);transition-delay:calc(var(--i)*60ms)}
 .ready .mast__word h1 span{transform:none;opacity:1}
 .mast__word h1 span.az{color:var(--az)}
