@@ -126,10 +126,14 @@ main{min-width:0;padding:0 var(--gut)}
 .slot .ic,.slot .face{width:74%;height:74%}
 .slot::after{content:"";position:absolute;inset:0;background:transparent;pointer-events:none}
 .slot:hover::after,.tt:hover .slot::after,.tt:focus-visible .slot::after{background:rgba(255,255,255,.22)}
-.glint{overflow:hidden}
-.glint::before{content:"";position:absolute;inset:-60%;z-index:1;pointer-events:none;mix-blend-mode:screen;
-  background:linear-gradient(115deg,transparent 42%,rgba(190,110,255,.6) 48%,transparent 54%);animation:glint 3.2s linear infinite}
-@keyframes glint{from{transform:translate(-30%,-30%)}to{transform:translate(30%,30%)}}
+/* EX: marco dorado que se enciende cada pocos segundos (sustituye al halo morado) */
+.glint{border-color:#8a6216 #f0c04a #f0c04a #8a6216;animation:oroEX 4.5s ease-in-out infinite}
+@keyframes oroEX{0%,70%,100%{box-shadow:0 0 0 0 rgba(255,200,70,0),inset 0 0 0 0 rgba(255,215,100,0)}
+  80%{box-shadow:0 0 14px 2px rgba(255,200,70,.85),inset 0 0 10px 1px rgba(255,215,100,.5);border-color:#ffe28a #fff1b8 #fff1b8 #ffe28a}
+  90%{box-shadow:0 0 6px 1px rgba(255,200,70,.35),inset 0 0 4px 0 rgba(255,215,100,.2)}}
+@media (prefers-reduced-motion:reduce){.glint{animation:none}}
+.fig{display:grid;place-items:center;padding:14px;background:repeating-linear-gradient(45deg,#1b1922 0 8px,#201e28 8px 16px);border:2px solid;border-color:#08070b #3e3a49 #3e3a49 #08070b;border-radius:3px}
+.fig img{width:96px;height:192px;image-rendering:pixelated;image-rendering:crisp-edges;filter:drop-shadow(3px 3px 0 rgba(0,0,0,.45))}
 
 /* ---------- HOME: cabecera tipo periódico ---------- */
 .mast{margin:0 calc(-1*var(--gut));padding:0 var(--gut);border-bottom:1px solid var(--stone)}
@@ -626,3 +630,29 @@ main{view-transition-name:main-view}
   .top,.rail,.tray,.totop,.marquee{display:none!important}
   .shell{display:block}
 }
+
+/* Tier lists (Dosa 01/11): sin recuadro de fondo; el propio objeto lleva un contorno del color de su tier.
+   El contorno sigue la silueta del sprite (drop-shadow en 4 direcciones, 2 px = un píxel de Minecraft aprox.) */
+.tt .slot{background:none;box-shadow:none;overflow:visible}
+.tt .slot::before{display:none}
+.tt .slot::after,.tt:hover .slot::after,.tt:focus-visible .slot::after{background:none}
+.tt .slot .ic,.tt .slot .face{--o:var(--c);filter:drop-shadow(2px 0 0 var(--o)) drop-shadow(-2px 0 0 var(--o)) drop-shadow(0 2px 0 var(--o)) drop-shadow(0 -2px 0 var(--o)) drop-shadow(0 4px 5px rgba(0,0,0,.55));transition:transform .15s steps(2,end)}
+.tt:hover .slot,.tt:focus-visible .slot{box-shadow:none}
+.tt:hover .slot .ic,.tt:hover .slot .face,.tt:focus-visible .slot .ic,.tt:focus-visible .slot .face{transform:scale(1.1) rotate(-3deg)}
+/* EX: contorno dorado que se enciende cada pocos segundos */
+.tt .slot.glint{animation:none;box-shadow:none;border:0}
+.tt .slot.glint .ic,.tt .slot.glint .face{--o:#e8b63c;animation:oroContorno 4.5s ease-in-out infinite}
+@keyframes oroContorno{0%,70%,100%{--o:#d9a536}80%{--o:#fff1b8}90%{--o:#f0c04a}}
+@property --o{syntax:'<color>';inherits:true;initial-value:#e8b63c}
+@media (prefers-reduced-motion:reduce){.tt .slot.glint .ic,.tt .slot.glint .face{animation:none}}
+/* ficha de encantamiento: un libro por nivel */
+.encdesc{margin:0;color:var(--ink-2);line-height:1.5}
+.books{display:grid;gap:8px}
+.book{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;padding:10px 12px;background:#17151d;border:1px solid var(--stone);border-radius:4px}
+.book .slot{width:44px;height:44px}
+.book b{display:block;font:700 14px/1.2 var(--f-body);color:var(--ink)}
+.book small{display:block;font:400 10px var(--f-px);color:var(--ink-3,#8d879a);letter-spacing:.04em;margin-top:2px}
+.book dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:4px 14px;margin:8px 0 0}
+.book dl div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed rgba(255,255,255,.08);padding-bottom:2px}
+.book dt{color:var(--ink-2);font-size:12.5px}
+.book dd{margin:0;color:var(--gold);font:700 12.5px var(--f-body);white-space:nowrap}

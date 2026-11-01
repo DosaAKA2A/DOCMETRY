@@ -40,6 +40,7 @@ const SVG = {
 const ALIAS = { crossbow: 'crossbow_standby', sunflower: 'sunflower_front', illusioner_spawn_egg: 'evoker_spawn_egg' };
 function ico(id, dye, lg) {
   if (!id) return '<span class="ic' + (lg ? ' lg' : '') + '"></span>';
+  if (String(id).startsWith('data:')) return `<span class="ic${lg ? ' lg' : ''}"><img alt="" src="${id}"></span>`;
   id = String(id).toLowerCase(); id = ALIAS[id] || id;
   if (dye && id.startsWith('leather_')) {
     return `<span class="ic${lg ? ' lg' : ''}"><span class="tint" style="background:${dye};-webkit-mask-image:url(${CDN}1.21.4/items/${id}.png);mask-image:url(${CDN}1.21.4/items/${id}.png)"></span><img alt="" loading="lazy" src="${CDN}1.21.4/items/${id}_overlay.png" onerror="this.remove()"></span>`;
@@ -333,7 +334,7 @@ function setDetail(s) {
     sub: `<span class="pill tier-${s.tier}">${s.tier}</span> Puesto ${rankOf(D.armaduras, s, 'poder')} de ${D.armaduras.length} por poder`,
     bars: [['Poder', s.poder, m.poder], ['Armadura', s.armadura, m.armadura], ['Dureza', s.dureza, m.dureza], ['Vida extra', s.vida, m.vida]],
     kv: [['Origen', esc(s.origen)], ['Tier', `<span class="pill tier-${s.tier}">${s.tier}</span>${fmt(s.poder)}`], ['Piezas', fmt((s.piezas || []).length)], ['Id', esc(s.id)]],
-    extra: s.piezas && s.piezas.length ? `<div><h4>Piezas</h4><div class="pieces">${s.piezas.map((p, i) => `<div class="pc" style="--i:${i}">${ico(p.m, p.d)}<span><b>${esc(p.n)}</b><small>${fmt(p.a)} arm · ${fmt(p.t)} dur · +${fmt(p.v)} vida</small></span></div>`).join('')}</div></div>` : '' });
+    extra: (s.fig ? `<div><h4>Puesta</h4><div class="fig"><img alt="${esc(s.nombre)} puesta, de frente" src="${s.fig}"></div></div>` : '') + (s.piezas && s.piezas.length ? `<div><h4>Piezas</h4><div class="pieces">${s.piezas.map((p, i) => `<div class="pc" style="--i:${i}">${ico(p.m, p.d)}<span><b>${esc(p.n)}</b><small>${fmt(p.a)} arm · ${fmt(p.t)} dur · +${fmt(p.v)} vida</small></span></div>`).join('')}</div></div>` : '') });
 }
 function armaDetail(a) {
   const m = mxW();
@@ -353,7 +354,19 @@ function anDetail(a) {
     kv: [['Clase', esc(a.clase)], ['Tier', `<span class="pill tier-${a.tier}">${a.tier}</span>${fmt(a.dificultad)}`], ['Vida', a.vida_base ? `${fmt(a.vida_base)} → ${fmt(a.vida)}` : fmt(a.vida)], ['Daño medio', `${x(a.dano_base)} → ${x(a.dano_real)}`], ['Bioma', esc(a.bioma)], ['MobCoins por participante', fmt(a.mobcoins)], ['Experiencia', fmt(a.exp)], ['Objetos en su botín', fmt(a.botin)], ['Habilidades', fmt(a.habilidades)]],
     extra: tab });
 }
-const FIND = { 'tl-armaduras': [() => D.armaduras, setDetail], 'tl-armas': [() => D.armas, armaDetail], 'tl-anomalias': [() => D.anomalias, anDetail] };
+// Ficha de un encantamiento (Dosa 01/11): cada libro con su nivel, lo que da y su nombre en inglés
+const ENC_TC = { Simple: 'D', Único: 'C', Elite: 'B', Supremo: 'A', Legendario: 'S', Ancestral: 'EX' };
+const ROM = n => ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'][n] || String(n);
+function encDetail(e) {
+  const t = ENC_TC[e.tier] || 'D';
+  const libros = (e.lv || []).map((l, i) => `<div class="book" style="--i:${i}"><span class="slot${t === 'EX' ? ' glint' : ''}">${ico('enchanted_book')}</span><div><b>${esc(e.nombre)} ${ROM(l.n)}</b><small>${esc(e.en)} ${ROM(l.n)}</small>
+    <dl>${l.filas.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl></div></div>`).join('');
+  openDrawer({ kind: 'Encantamiento · ' + e.tier, title: e.nombre, art: ico('enchanted_book', null, 1), color: TC[t], link: 'encantamientos/' + e.id,
+    sub: `<span class="pill tier-${t}">${esc(e.tier)}</span> En inglés: <b>${esc(e.en)}</b>`,
+    kv: [['Nombre en inglés', esc(e.en)], ['Tier', `<span class="pill tier-${t}">${esc(e.tier)}</span>`], ['Para', esc(e.para)], ['Niveles', fmt(e.niveles)]],
+    extra: (e.desc ? `<div><h4>Qué hace</h4><p class="encdesc">${esc(e.desc)}</p></div>` : '') + (libros ? `<div><h4>Libros por nivel</h4><div class="books">${libros}</div></div>` : '') });
+}
+const FIND = { encantamientos: [() => D.encantamientos, encDetail], 'tl-armaduras': [() => D.armaduras, setDetail], 'tl-armas': [() => D.armas, armaDetail], 'tl-anomalias': [() => D.anomalias, anDetail] };
 
 // ---------- comparador
 const tray = $('#tray'), cmpEl = $('#cmp'); const CMP = { kind: null, items: [] };
@@ -474,7 +487,7 @@ const B = {
   encantamientos(el) {
     const tc = { Simple: 'D', Único: 'C', Elite: 'B', Supremo: 'A', Legendario: 'S', Ancestral: 'EX' }, ord = { Simple: 1, Único: 2, Elite: 3, Supremo: 4, Legendario: 5, Ancestral: 6 };
     el.innerHTML = head('encantamientos', 'Encantamientos', `Los ${D.encantamientos.length} de AdvancedEnchantments con su efecto al nivel máximo. Libros: /xpshop (Simple a Legendario), Bóveda, cajas, pase, cofres PvP.`, Object.keys(tc).reverse().map(t => [t, D.encantamientos.filter(e => e.tier === t).length]).filter(x => x[1])) + '<div id="tb" class="rv"></div>' + fichas('encantamientos');
-    table($('#tb', el), [{ k: 'nombre', l: 'Encantamiento', render: (r, re) => `<b>${hl(r.nombre, re)}</b>` }, { k: 'tier', l: 'Tier', sv: r => ord[r.tier] || 0, render: r => `<span class="pill tier-${tc[r.tier]}">${esc(r.tier)}</span>` }, { k: 'para', l: 'Para' }, { k: 'niveles', l: 'Niveles', t: 'num' }, { k: 'efecto', l: 'Efecto al nivel máximo' }], D.encantamientos, { filters: ['tier', 'para'], sort: 'tier', dir: -1, name: 'encantamientos' });
+    table($('#tb', el), [{ k: 'nombre', l: 'Encantamiento', render: (r, re) => `<b>${hl(r.nombre, re)}</b>` }, { k: 'tier', l: 'Tier', sv: r => ord[r.tier] || 0, render: r => `<span class="pill tier-${tc[r.tier]}">${esc(r.tier)}</span>` }, { k: 'para', l: 'Para' }, { k: 'niveles', l: 'Niveles', t: 'num' }, { k: 'efecto', l: 'Efecto al nivel máximo' }], D.encantamientos, { filters: ['tier', 'para'], sort: 'tier', dir: -1, name: 'encantamientos', onRow: encDetail });
   },
   mazmorras(el) {
     const top = [...D.jefes].sort((a, b) => b.vida - a.vida);
