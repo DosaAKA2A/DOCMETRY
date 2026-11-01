@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Copia los datos de un index.html generado por build_doc.py a assets/data.js.
 
-El diseño (index.html, assets/docmetry.css y assets/docmetry.js) ya no se toca
+El diseño (index.html, assets/codice.css y assets/codice.js) ya no se toca
 al regenerar: solo cambian los datos.
 
 Uso:
