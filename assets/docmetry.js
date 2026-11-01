@@ -117,7 +117,7 @@ const nav = $('#nav'), main = $('#main');
 
 function head(id, title, p, stats = []) {
   const v = VI[id];
-  return `<header class="vh"><span class="eyebrow">${esc(v.g)} <b>/ ${pad(v.i)}</b></span><h1>${split(title)}</h1>${p ? `<p>${p}</p>` : ''}${stats.length ? `<div class="stats">${stats.map(([k, b]) => `<span class="chip"><i></i>${k} <b>${b}</b></span>`).join('')}</div>` : ''}</header>`;
+  return `<header class="vh"><nav class="crumbs" aria-label="Migas"><a href="#inicio">Docmetry</a><span>›</span><span>${esc(v.g)}</span><span>›</span><b>${esc(v.t)}</b><em class="upd">Actualizado 31/10/2026</em></nav><h1>${split(title)}</h1>${p ? `<p>${p}</p>` : ''}${stats.length ? `<div class="stats">${stats.map(([k, b]) => `<span class="chip"><i></i>${k} <b>${b}</b></span>`).join('')}</div>` : ''}</header>`;
 }
 function sect(title, inner, n, sub) {
   return `<section class="sect"><div class="sect__h rv"><h2>${n ? `<small>${n}</small>` : ''}${title}</h2>${sub ? `<p>${sub}</p>` : ''}</div>${inner}</section>`;
@@ -192,28 +192,54 @@ function table(el, cols, rows, opt = {}) {
 
 // ---------- tier list
 function tierlist(el, items, o) {
-  const groups = o.groups, tiers = o.tiers; let q = '', off = new Set();
-  el.innerHTML = `<div class="bar"><label class="field">${SVG.search}<input type="search" placeholder="Buscar en la tier list…" aria-label="Buscar en la tier list"></label>${groups.map(g => `<button type="button" class="tg on" data-g="${esc(g)}" aria-pressed="true">${esc(g)}</button>`).join('')}<span class="cnt"></span><button type="button" class="icon-btn reset">${SVG.reset}Restablecer</button></div>
-  <div class="tl" style="--nc:${groups.length}"><div class="tl-scroll"><div class="tl-grid"><div class="tl-cols"><div></div>${groups.map(g => `<div>${esc(g)}</div>`).join('')}</div>
-  ${tiers.map(t => `<div class="tl-row"><div class="tl-t tier-${t}">${t}</div>${groups.map(g => `<div class="tl-c" data-t="${t}" data-g="${esc(g)}"></div>`).join('')}</div>`).join('')}</div></div></div>`;
-  let i = 0;
-  items.forEach(it => {
-    const c = el.querySelector(`.tl-c[data-t="${it.tier}"][data-g="${CSS.escape(o.group(it))}"]`); if (!c) return;
+  const tiers = o.tiers, groups = o.groups; let q = '', off = new Set(), offT = new Set(), cols = true, first = true;
+  const sorted = [...items].sort((a, b) => o.value(b) - o.value(a));
+  const fv = o.fmtv || fmt;
+  const rng = t => { const v = sorted.filter(i => i.tier === t).map(o.value); if (!v.length) return 'sin entradas'; const mn = Math.min(...v), mx = Math.max(...v); return mn === mx ? fv(mn) : fv(mn) + ' – ' + fv(mx); };
+  const cntT = t => sorted.filter(i => i.tier === t).length;
+  el.innerHTML = `<div class="tlbar">
+    <div class="tlbar__row"><label class="field">${SVG.search}<input type="search" placeholder="Buscar por nombre…" aria-label="Buscar en la tier list"></label>
+      <div class="seg" role="group" aria-label="Columnas"><button type="button" class="on" data-cols="1">Por ${esc(o.groupLabel)}</button><button type="button" data-cols="0">Todo junto</button></div>
+      <span class="cnt"></span><button type="button" class="icon-btn reset">${SVG.reset}Restablecer</button></div>
+    <div class="tlbar__row"><span class="lab">Tier</span><div class="chips">${tiers.map(t => `<button type="button" class="tchip on" data-t="${t}" style="--tc:${TC[t]}" aria-pressed="true" title="${cntT(t)} en tier ${t}">${t}</button>`).join('')}</div>
+      <span class="lab">${esc(o.groupLabel)}</span><div class="chips">${groups.map(g => `<button type="button" class="tg on" data-g="${esc(g)}" aria-pressed="true">${esc(g)} <small>${sorted.filter(i => o.group(i) === g).length}</small></button>`).join('')}</div></div>
+  </div><div class="tl"></div>`;
+  const tl = $('.tl', el), cnt = $('.cnt', el);
+  function card(it, i) {
     const d = document.createElement('div'); d.className = 'tt'; d.tabIndex = 0; d.setAttribute('role', 'button');
     d.dataset.n = norm(it[o.name]); d.dataset.g = o.group(it); d.dataset.id = it.id;
-    d.style.setProperty('--c', it.col || TC[it.tier]); d.style.setProperty('--i', Math.min(i++, 60));
+    d.style.setProperty('--c', TC[it.tier]); d.style.setProperty('--i', Math.min(i, 60));
     d.setAttribute('aria-label', `${it[o.name]}, tier ${it.tier}`);
     if (o.tip) d.dataset.tip = o.tip + ':' + it.id;
     d.innerHTML = `<span class="slot${it.tier === 'EX' ? ' glint' : ''}">${o.icon(it)}</span><span class="nm">${esc(it[o.name])}</span><span class="pw">${o.label ? o.label(it) : fmt(o.value(it))}</span>`;
     d.addEventListener('click', () => o.detail(it)); d.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); o.detail(it); } });
-    c.appendChild(d);
-  });
-  const cnt = $('.cnt', el), all = $$('.tt', el);
-  const apply = () => { let n = 0; all.forEach(t => { const dim = (q && !t.dataset.n.includes(q)) || off.has(t.dataset.g); t.classList.toggle('dim', dim); if (!dim) n++; }); cnt.innerHTML = `<b>${n}</b> de ${all.length}`; };
+    return d;
+  }
+  function render() {
+    const gs = cols ? groups : ['Todos'];
+    tl.style.setProperty('--nc', gs.length); tl.classList.toggle('one', !cols);
+    tl.innerHTML = `<div class="tl-scroll"><div class="tl-grid">${cols ? `<div class="tl-cols"><div>Tier</div>${gs.map(g => `<div>${esc(g)}</div>`).join('')}</div>` : ''}
+      ${tiers.map(t => `<div class="tl-row" data-t="${t}" style="--tc:${TC[t]}"><div class="tl-t"><b>${t}</b><small>${rng(t)}</small><span>${cntT(t)}</span></div>${gs.map(g => `<div class="tl-c" data-t="${t}" data-g="${esc(g)}"></div>`).join('')}</div>`).join('')}</div></div>`;
+    sorted.forEach((it, i) => { const c = tl.querySelector(`.tl-c[data-t="${it.tier}"][data-g="${CSS.escape(cols ? o.group(it) : 'Todos')}"]`); if (c) c.appendChild(card(it, i)); });
+    apply(); hydrate(tl);
+    if (!first) tl.classList.add('is-in'); first = false;
+  }
+  function apply() {
+    $$('.tt', tl).forEach(t => t.classList.toggle('hide', !!(q && !t.dataset.n.includes(q)) || off.has(t.dataset.g)));
+    let n = 0;
+    $$('.tl-row', tl).forEach(r => {
+      const vis = $$('.tt:not(.hide)', r).length;
+      r.hidden = offT.has(r.dataset.t) || (!vis && !!(q || off.size));
+      if (!r.hidden) n += vis;
+    });
+    cnt.innerHTML = `<b>${n}</b> de ${sorted.length}`;
+  }
   $('input', el).addEventListener('input', e => { q = norm(e.target.value.trim()); apply(); });
-  $$('.tg[data-g]', el).forEach(b => b.addEventListener('click', () => { const g = b.dataset.g; const on = b.classList.toggle('on'); b.setAttribute('aria-pressed', on); on ? off.delete(g) : off.add(g); apply(); }));
-  $('.reset', el).addEventListener('click', () => { q = ''; off.clear(); $('input', el).value = ''; $$('.tg[data-g]', el).forEach(b => { b.classList.add('on'); b.setAttribute('aria-pressed', true); }); apply(); });
-  apply(); hydrate(el);
+  $$('.tg[data-g]', el).forEach(b => b.addEventListener('click', () => { const g = b.dataset.g, on = b.classList.toggle('on'); b.setAttribute('aria-pressed', on); on ? off.delete(g) : off.add(g); apply(); }));
+  $$('.tchip', el).forEach(b => b.addEventListener('click', () => { const t = b.dataset.t, on = b.classList.toggle('on'); b.setAttribute('aria-pressed', on); on ? offT.delete(t) : offT.add(t); apply(); }));
+  $$('.seg button', el).forEach(b => b.addEventListener('click', () => { cols = b.dataset.cols === '1'; $$('.seg button', el).forEach(x => x.classList.toggle('on', x === b)); render(); }));
+  $('.reset', el).addEventListener('click', () => { q = ''; off.clear(); offT.clear(); $('input', el).value = ''; $$('.tg[data-g],.tchip', el).forEach(b => { b.classList.add('on'); b.setAttribute('aria-pressed', true); }); apply(); });
+  render();
 }
 
 // ---------- ficha (drawer)
@@ -353,22 +379,22 @@ const B = {
   },
   'tl-armaduras'(el) {
     el.innerHTML = head('tl-armaduras', 'Tier list de armaduras', 'Poder del set con la fórmula de la guía. EX ≥ 6.800 (Veyra, el set top) · S ≥ 5.080 · A ≥ 4.000 · B ≥ 3.000 · C ≥ 2.000. Toca un set para ver sus piezas.', tierStats(D.armaduras, ['EX', 'S', 'A', 'B', 'C', 'D'])) +
-      `<div id="tl" class="rv"></div>` + sect('Todas las armaduras', '<div id="tb" class="rv"></div>', 'DB', 'Pulsa una fila para abrir la ficha. Ordena tocando la cabecera.') + fichas('armaduras');
+      `<div id="tl"></div>` + sect('Todas las armaduras', '<div id="tb" class="rv"></div>', 'DB', 'Pulsa una fila para abrir la ficha. Ordena tocando la cabecera.') + fichas('armaduras');
     const G = ['Anomalía', 'Mazmorra', 'Cajas y eventos', 'VIP', 'Calamity', 'Playtime (God Kit)'];
-    tierlist($('#tl', el), D.armaduras.filter(s => G.includes(s.origen)), { groups: G, tiers: ['EX', 'S', 'A', 'B', 'C', 'D'], group: s => s.origen, name: 'nombre', value: s => s.poder, icon: s => ico(s.icon, s.dye, 1), detail: setDetail, tip: 'a' });
+    tierlist($('#tl', el), D.armaduras.filter(s => G.includes(s.origen)), { groups: G, tiers: ['EX', 'S', 'A', 'B', 'C', 'D'], group: s => s.origen, groupLabel: 'origen', name: 'nombre', value: s => s.poder, icon: s => ico(s.icon, s.dye, 1), detail: setDetail, tip: 'a' });
     table($('#tb', el), [{ k: 'nombre', l: 'Set', render: (r, re) => `<span class="row">${ico(r.icon, r.dye)}<b>${hl(r.nombre, re)}</b></span>` }, { k: 'origen', l: 'Origen' }, { k: 'tier', l: 'Tier', t: 'tier' }, { k: 'poder', l: 'Poder', t: 'bar' }, { k: 'armadura', l: 'Armadura', t: 'num' }, { k: 'dureza', l: 'Dureza', t: 'num' }, { k: 'vida', l: 'Vida extra', t: 'num' }], D.armaduras, { filters: ['origen', 'tier'], sort: 'poder', onRow: setDetail, name: 'armaduras' });
   },
   'tl-armas'(el) {
     el.innerHTML = head('tl-armas', 'Tier list de armas', 'Poder = (golpe medio − 1) × 60, con críticos (MythicLib ×2 + el % del arma). S ≥ 4.600 · A ≥ 3.000 · B ≥ 1.900 · C ≥ 1.000. Los arcos no cuentan el encantamiento Poder.', tierStats(D.armas, ['EX', 'S', 'A', 'B', 'C', 'D'])) +
-      `<div id="tl" class="rv"></div>` + sect('Todas las armas', '<div id="tb" class="rv"></div>', 'DB', 'Incluye las de tier D, que no salen en la tier list.') + fichas('armas');
+      `<div id="tl"></div>` + sect('Todas las armas', '<div id="tb" class="rv"></div>', 'DB', 'Incluye las de tier D, que no salen en la tier list.') + fichas('armas');
     const G = ['Espada', 'Hacha', 'Lanza', 'Tridente', 'Arco', 'Ballesta', 'Mazo'];
-    tierlist($('#tl', el), D.armas.filter(a => a.tier !== 'D'), { groups: G.filter(g => D.armas.some(a => a.clase === g)), tiers: ['EX', 'S', 'A', 'B', 'C'], group: a => a.clase, name: 'nombre', value: a => a.poder, icon: a => ico(a.icon, null, 1), detail: armaDetail, tip: 'w' });
+    tierlist($('#tl', el), D.armas.filter(a => a.tier !== 'D'), { groups: G.filter(g => D.armas.some(a => a.clase === g)), tiers: ['EX', 'S', 'A', 'B', 'C'], group: a => a.clase, groupLabel: 'clase', name: 'nombre', value: a => a.poder, icon: a => ico(a.icon, null, 1), detail: armaDetail, tip: 'w' });
     table($('#tb', el), [{ k: 'nombre', l: 'Arma', render: (r, re) => `<span class="row">${ico(r.icon)}<b>${hl(r.nombre, re)}</b></span>` }, { k: 'clase', l: 'Clase' }, { k: 'origen', l: 'Origen' }, { k: 'tier', l: 'Tier', t: 'tier' }, { k: 'dano', l: 'Daño', t: 'num' }, { k: 'critico', l: 'Crítico', t: 'num', u: ' %' }, { k: 'max', l: 'Daño crítico', t: 'num' }, { k: 'poder', l: 'Poder', t: 'bar' }], D.armas, { filters: ['clase', 'origen', 'tier'], sort: 'poder', onRow: armaDetail, name: 'armas' });
   },
   'tl-anomalias'(el) {
     el.innerHTML = head('tl-anomalias', 'Tier list de anomalías', 'Puntuación = vida × daño medio por golpe (media de sus habilidades con el multiplicador de su ficha). ♥ vida · ⚔ daño medio. Pulsa una para ver todas sus habilidades a ×1 y a su multiplicador.', tierStats(D.anomalias, ['S', 'A', 'B', 'C', 'D'])) +
-      `<div id="tl" class="rv"></div>` + sect('Comparativa', '<div id="tb" class="rv"></div>', 'DB') + fichas('anomalias');
-    tierlist($('#tl', el), D.anomalias, { groups: ['General', 'Monarca', 'Dios'], tiers: ['S', 'A', 'B', 'C', 'D'], group: a => a.clase, name: 'nombre', value: a => a.dificultad, label: a => `<span title="Vida">♥ ${fmtK(a.vida)}</span> · <span title="Daño medio por golpe">⚔ ${fmt(Math.round(a.dano_real))}</span>`, icon: a => face(a), detail: anDetail, tip: 'n' });
+      `<div id="tl"></div>` + sect('Comparativa', '<div id="tb" class="rv"></div>', 'DB') + fichas('anomalias');
+    tierlist($('#tl', el), D.anomalias, { groups: ['General', 'Monarca', 'Dios'], tiers: ['S', 'A', 'B', 'C', 'D'], group: a => a.clase, groupLabel: 'clase', fmtv: fmtK, name: 'nombre', value: a => a.dificultad, label: a => `<span title="Vida">♥ ${fmtK(a.vida)}</span><span title="Daño medio por golpe">⚔ ${fmt(Math.round(a.dano_real))}</span>`, icon: a => face(a), detail: anDetail, tip: 'n' });
     table($('#tb', el), [{ k: 'nombre', l: 'Anomalía', render: (r, re) => `<span class="row">${face(r)}<b>${hl(r.nombre, re)}</b></span>` }, { k: 'clase', l: 'Clase' }, { k: 'tier', l: 'Tier', t: 'tier' }, { k: 'vida', l: 'Vida', t: 'bar' }, { k: 'dano', l: 'Daño ×', t: 'num' }, { k: 'dano_base', l: 'Daño medio ×1', t: 'num' }, { k: 'dano_real', l: 'Daño medio real', t: 'bar' }, { k: 'dificultad', l: 'Puntuación', t: 'num' }, { k: 'mobcoins', l: 'MobCoins', t: 'num' }, { k: 'exp', l: 'EXP', t: 'num' }, { k: 'botin', l: 'Objetos', t: 'num' }, { k: 'bioma', l: 'Bioma' }], D.anomalias, { filters: ['clase', 'tier'], sort: 'dificultad', onRow: anDetail, name: 'anomalias' });
   },
   cajas(el) {
