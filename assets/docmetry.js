@@ -46,20 +46,56 @@ function ico(id, dye, lg) {
   }
   return `<span class="ic${lg ? ' lg' : ''}"><img alt="" loading="lazy" data-id="${esc(id)}" data-i="0"></span>`;
 }
+// Recortes de cara corregidos para texturas cuya cabeza no es 8×8 o cuyo dato apunta mal.
+// [x, y, ancho, alto] de la cara frontal y, si hay, la pieza del hocico/nariz: [x, y, ancho, alto, dx, dy].
+const FACEFIX = {
+  'piglin/piglin_brute': { f: [8, 8, 10, 8], n: [32, 2, 4, 4, 3, 4] },
+  'piglin/piglin': { f: [8, 8, 10, 8], n: [32, 2, 4, 4, 3, 4] },
+  'warden/warden': { f: [10, 42, 16, 16] },
+  'villager/villager': { f: [8, 8, 8, 10] },
+  'witch': { f: [8, 8, 8, 10] },
+  'illager/ravager': { f: [16, 16, 16, 20] },
+  'goat/goat': { f: [44, 56, 5, 7] }
+};
+const IMGC = {}, FACEC = {};
+const loadImg = u => IMGC[u] || (IMGC[u] = new Promise((ok, ko) => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => ok(i); i.onerror = ko; i.src = u; }));
 function face(a) {
   if (a.face) return `<span class="face"><img alt="" src="${a.face}"></span>`;
-  if (a.skin) {
-    // recorte de la textura en porcentajes: encaja a cualquier tamaño
-    const [p, w, h, x, y, fw, fh = fw] = a.skin;
-    const bx = w === fw ? 0 : x / (w - fw) * 100, by = h === fh ? 0 : y / (h - fh) * 100;
-    return `<span class="face" style="background-image:url(${CDN}1.21.4/entity/${p}.png);background-size:${w / fw * 100}% ${h / fh * 100}%;background-position:${bx}% ${by}%"></span>`;
-  }
+  if (a.skin) return `<span class="face" data-skin="${esc(JSON.stringify(a.skin))}"></span>`;
   return ico(a.icon);
+}
+// dibuja la cara recortada en un canvas (píxel nítido, centrada en un cuadrado) y la cachea
+function faceURL(skin) {
+  const k = skin.join(',');
+  return FACEC[k] || (FACEC[k] = (async () => {
+    const [p, , , x, y, fw, fh = fw] = skin, fix = FACEFIX[p];
+    const [fx, fy, w, h] = fix ? fix.f : [x, y, fw, fh];
+    const img = await loadImg(`${CDN}1.21.4/entity/${p}.png`);
+    const S = Math.max(w, h), c = document.createElement('canvas'); c.width = c.height = S;
+    const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
+    const ox = (S - w) / 2, oy = (S - h) / 2;
+    g.drawImage(img, fx, fy, w, h, ox, oy, w, h);
+    if (fix && fix.n) { const [nx, ny, nw, nh, dx, dy] = fix.n; g.drawImage(img, nx, ny, nw, nh, ox + dx, oy + dy, nw, nh); }
+    return c.toDataURL();
+  })());
+}
+function hydrateFaces(root) {
+  root.querySelectorAll('.face[data-skin]').forEach(el => {
+    const skin = JSON.parse(el.dataset.skin); el.removeAttribute('data-skin');
+    faceURL(skin).then(u => { el.style.backgroundImage = `url(${u})`; el.style.backgroundSize = '100% 100%'; }, () => {
+      // si el canvas no se puede leer, recorte con porcentajes como respaldo
+      const [p, w, h, x, y, fw, fh = fw] = skin;
+      el.style.backgroundImage = `url(${CDN}1.21.4/entity/${p}.png)`;
+      el.style.backgroundSize = `${w / fw * 100}% ${h / fh * 100}%`;
+      el.style.backgroundPosition = `${w === fw ? 0 : x / (w - fw) * 100}% ${h === fh ? 0 : y / (h - fh) * 100}%`;
+    });
+  });
 }
 const tag = t => `<span class="tagbox">${t}</span>`;
 const eggOf = n => ico(String(n).trim().toLowerCase().replace(/\s+/g, '_') + '_spawn_egg');
 const mobFace = j => j.skin ? `<span class="face"><img alt="" loading="lazy" src="${j.skin}"></span>` : ico(j.icon);
 function hydrate(root) {
+  hydrateFaces(root);
   root.querySelectorAll('img[data-id]').forEach(img => {
     if (img.src) return; const id = img.dataset.id;
     const L = [CDN + '1.21.4/items/' + id + '.png', CDN + '1.21.4/blocks/' + id + '.png', CDN + '1.21.11/items/' + id + '.png', CDN + '1.21.11/blocks/' + id + '.png'];
