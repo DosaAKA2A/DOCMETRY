@@ -48,9 +48,16 @@ function ico(id, dye, lg) {
 }
 function face(a) {
   if (a.face) return `<span class="face"><img alt="" src="${a.face}"></span>`;
-  if (a.skin) { const [p, w, h, x, y, fw] = a.skin; const s = 36 / fw; return `<span class="face" style="background-image:url(${CDN}1.21.4/entity/${p}.png);background-size:${w * s}px ${h * s}px;background-position:-${x * s}px -${y * s}px"></span>`; }
+  if (a.skin) {
+    // recorte de la textura en porcentajes: encaja a cualquier tamaño
+    const [p, w, h, x, y, fw, fh = fw] = a.skin;
+    const bx = w === fw ? 0 : x / (w - fw) * 100, by = h === fh ? 0 : y / (h - fh) * 100;
+    return `<span class="face" style="background-image:url(${CDN}1.21.4/entity/${p}.png);background-size:${w / fw * 100}% ${h / fh * 100}%;background-position:${bx}% ${by}%"></span>`;
+  }
   return ico(a.icon);
 }
+const tag = t => `<span class="tagbox">${t}</span>`;
+const eggOf = n => ico(String(n).trim().toLowerCase().replace(/\s+/g, '_') + '_spawn_egg');
 const mobFace = j => j.skin ? `<span class="face"><img alt="" loading="lazy" src="${j.skin}"></span>` : ico(j.icon);
 function hydrate(root) {
   root.querySelectorAll('img[data-id]').forEach(img => {
@@ -351,14 +358,14 @@ function answers() {
   const rara = D.premios.reduce((m, x) => x.pct < m.pct ? x : m, D.premios[0]);
   const vip = bestOf('VIP'), caj = bestOf('Cajas y eventos'), cal = bestOf('Calamity');
   const A = [
-    ['¿Qué caja da más dinero por llave?', cajaD.caja, fmt(cajaD.ev_dinero) + ' de media', ico('tripwire_hook'), '#cajas'],
-    ['¿Y más MobCoins por llave?', cajaM.caja, fmt(cajaM.ev_mc) + ' MC de media', ico('sunflower'), '#cajas'],
+    ['¿Qué caja da más dinero por llave?', cajaD.caja, fmt(cajaD.ev_dinero) + ' de media', ico('trial_key'), '#cajas'],
+    ['¿Y más MobCoins por llave?', cajaM.caja, fmt(cajaM.ev_mc) + ' MC de media', ico('ominous_trial_key'), '#cajas'],
     ['¿Qué anomalía da más MobCoins?', anMC.nombre, fmt(anMC.mobcoins) + ' MC por participante', face(anMC), '#tl-anomalias/' + anMC.id],
-    ['¿Qué mob suelta más MobCoins?', mob.mob, fmt(mob.media) + ' MC por muerte', ico('gold_nugget'), '#economia'],
+    ['¿Qué mob suelta más MobCoins?', mob.mob, fmt(mob.media) + ' MC por muerte', eggOf(mob.mob), '#economia'],
     vip && ['¿Mejor set de origen VIP?', vip.nombre, fmt(vip.poder) + ' de poder', ico(vip.icon, vip.dye), '#tl-armaduras/' + vip.id],
     caj && ['¿Mejor set de cajas y eventos?', caj.nombre, fmt(caj.poder) + ' de poder', ico(caj.icon, caj.dye), '#tl-armaduras/' + caj.id],
     cal && ['¿Mejor set de Calamity?', cal.nombre, fmt(cal.poder) + ' de poder', ico(cal.icon, cal.dye), '#tl-armaduras/' + cal.id],
-    ['¿El premio más difícil de sacar?', rara.premio, `${fmt(rara.pct)} % en ${rara.caja}`, ico('tripwire_hook'), '#cajas--' + encodeURIComponent(rara.premio)],
+    ['¿El premio más difícil de sacar?', rara.premio, `${fmt(rara.pct)} % en ${rara.caja}`, tag(fmt(rara.pct) + '%'), '#cajas--' + encodeURIComponent(rara.premio)],
   ].filter(Boolean);
   return A.map(([q, a, v, i, h]) => `<a class="ans" href="${h}"><span class="slot">${i}</span><span class="ans__t"><small>${esc(q)}</small><b>${esc(a)}</b><em>${esc(v)}</em></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>`).join('');
 }
@@ -417,7 +424,7 @@ const B = {
   cajas(el) {
     const C = [...D.cajas].sort((a, b) => b.ev_dinero - a.ev_dinero), mx = Math.max(...C.map(c => c.ev_dinero)), mm = Math.max(...C.map(c => c.ev_mc));
     el.innerHTML = head('cajas', 'Cajas y premios', `${D.cajas.length} cajas y ${D.premios.length} premios. La probabilidad es el peso del premio entre el total de su caja.`, [['Cajas', D.cajas.length], ['Premios', D.premios.length]]) +
-      sect('Comparativa por caja', `<div class="cards">${C.map((c, i) => `<div class="cc glass spot rv" style="--d:${(i % 4) * 60}ms"><h3>${ico('tripwire_hook')}${esc(c.caja)}<span class="rank">#${pad(i + 1)}</span></h3><div class="kv"><span>Premios</span><span>${c.premios}</span><span>Equipo</span><span>${fmt(c.equipo)} %</span><span>Premio más raro</span><span>${fmt(c.rara)} %</span></div>
+      sect('Comparativa por caja', `<div class="cards">${C.map((c, i) => `<div class="cc glass spot rv" style="--d:${(i % 4) * 60}ms"><h3>${esc(c.caja)}<span class="rank">#${pad(i + 1)}</span></h3><div class="kv"><span>Premios</span><span>${c.premios}</span><span>Equipo</span><span>${fmt(c.equipo)} %</span><span>Premio más raro</span><span>${fmt(c.rara)} %</span></div>
         <div class="mlabel"><span>Dinero medio por llave</span><b>${fmt(c.ev_dinero)}</b></div><div class="meter"><i style="--w:${c.ev_dinero / mx}"></i></div>
         <div class="mlabel"><span>MobCoins medias por llave</span><b>${fmt(c.ev_mc)}</b></div><div class="meter az"><i style="--w:${c.ev_mc / mm}"></i></div></div>`).join('')}</div>`, '01', 'Ordenadas por dinero medio por llave.') +
       sect('Todos los premios', '<div id="tb" class="rv"></div>', '02') + fichas('cajas');
@@ -426,7 +433,7 @@ const B = {
   encantamientos(el) {
     const tc = { Simple: 'D', Único: 'C', Elite: 'B', Supremo: 'A', Legendario: 'S', Ancestral: 'EX' }, ord = { Simple: 1, Único: 2, Elite: 3, Supremo: 4, Legendario: 5, Ancestral: 6 };
     el.innerHTML = head('encantamientos', 'Encantamientos', `Los ${D.encantamientos.length} de AdvancedEnchantments con su efecto al nivel máximo. Libros: /xpshop (Simple a Legendario), Bóveda, cajas, pase, cofres PvP.`, Object.keys(tc).reverse().map(t => [t, D.encantamientos.filter(e => e.tier === t).length]).filter(x => x[1])) + '<div id="tb" class="rv"></div>' + fichas('encantamientos');
-    table($('#tb', el), [{ k: 'nombre', l: 'Encantamiento', render: (r, re) => `<span class="row">${ico('enchanted_book')}<b>${hl(r.nombre, re)}</b></span>` }, { k: 'tier', l: 'Tier', sv: r => ord[r.tier] || 0, render: r => `<span class="pill tier-${tc[r.tier]}">${esc(r.tier)}</span>` }, { k: 'para', l: 'Para' }, { k: 'niveles', l: 'Niveles', t: 'num' }, { k: 'efecto', l: 'Efecto al nivel máximo' }], D.encantamientos, { filters: ['tier', 'para'], sort: 'tier', dir: -1, name: 'encantamientos' });
+    table($('#tb', el), [{ k: 'nombre', l: 'Encantamiento', render: (r, re) => `<b>${hl(r.nombre, re)}</b>` }, { k: 'tier', l: 'Tier', sv: r => ord[r.tier] || 0, render: r => `<span class="pill tier-${tc[r.tier]}">${esc(r.tier)}</span>` }, { k: 'para', l: 'Para' }, { k: 'niveles', l: 'Niveles', t: 'num' }, { k: 'efecto', l: 'Efecto al nivel máximo' }], D.encantamientos, { filters: ['tier', 'para'], sort: 'tier', dir: -1, name: 'encantamientos' });
   },
   mazmorras(el) {
     const top = [...D.jefes].sort((a, b) => b.vida - a.vida);
@@ -440,7 +447,7 @@ const B = {
   tags(el) {
     const cats = [...new Set(D.tags.map(t => t.categoria))];
     el.innerHTML = head('tags', 'Tags', `Los ${D.tags.length} tags del plugin Tags y cómo se consiguen.`, [['Tags', D.tags.length], ['Categorías', cats.length]]) + '<div id="tb" class="rv"></div>';
-    table($('#tb', el), [{ k: 'tag', l: 'Tag', render: (r, re) => `<span class="row">${ico('name_tag')}<b>${hl(r.tag, re)}</b></span>` }, { k: 'categoria', l: 'Categoría' }, { k: 'fuente', l: 'Cómo se consigue' }], D.tags, { filters: ['categoria'], name: 'tags' });
+    table($('#tb', el), [{ k: 'tag', l: 'Tag', render: (r, re) => `<b>${hl(r.tag, re)}</b>` }, { k: 'categoria', l: 'Categoría' }, { k: 'fuente', l: 'Cómo se consigue' }], D.tags, { filters: ['categoria'], name: 'tags' });
   },
   economia(el) {
     const src = [['Rankup (20 rangos)', 9400000], ['Misiones de una vez', 7500000], ['Diaria Monarch (30 días)', 4830000], ['Playtime (99 niveles)', 3916500], ['AuraSkills (11 habilidades al 100)', 2310000], ['Pase S2 premium', 1896000], ['Pase S2 gratis', 851000], ['Votos (30 días)', 540000], ['Diaria Aeris (30 días)', 330000]];
@@ -488,9 +495,9 @@ const B = {
   mundo(el) {
     const C = { Piedra: '#8a8f98', Hierro: '#d8c3a5', Carbón: '#3b3f46', Oro: '#f2c14e', Redstone: '#e2483f', Lapislázuli: '#3c5fd1', Diamante: '#5fe3d6', Esmeralda: '#41c46b', Escombros: '#7a5440' };
     el.innerHTML = head('mundo', 'Mundo y servicios', 'Minions, protecciones, minas, spawners y otros servicios.', [['Minas', D.minas.length], ['Minions', D.minions.length]]) +
-      sect('Minas (lo que sale al picar)', `<div class="cards">${D.minas.map((m, n) => `<div class="cc glass spot rv" style="--d:${n * 80}ms"><h3>${ico('iron_pickaxe')}${esc(m.mina)}</h3><div class="mlabel"><span>Se rellena cada</span><b>${esc(m.reinicio)}</b></div><div class="stack">${Object.entries(m.comp).map(([k, v], i) => `<span style="--w:${v}%;--i:${i};background:${C[k]}" title="${k} ${fmt(v)} %">${v >= 6 ? fmt(Math.round(v)) + '%' : ''}</span>`).join('')}</div><div class="kv">${Object.entries(m.comp).map(([k, v]) => `<span>${k}</span><span>${fmt(v)} %</span>`).join('')}</div></div>`).join('')}</div><div class="legend rv">${Object.entries(C).map(([k, v]) => `<span><b style="background:${v}"></b>${k}</span>`).join('')}</div>`, '01') +
+      sect('Minas (lo que sale al picar)', `<div class="cards">${D.minas.map((m, n) => `<div class="cc glass spot rv" style="--d:${n * 80}ms"><h3>${esc(m.mina)}</h3><div class="mlabel"><span>Se rellena cada</span><b>${esc(m.reinicio)}</b></div><div class="stack">${Object.entries(m.comp).map(([k, v], i) => `<span style="--w:${v}%;--i:${i};background:${C[k]}" title="${k} ${fmt(v)} %">${v >= 6 ? fmt(Math.round(v)) + '%' : ''}</span>`).join('')}</div><div class="kv">${Object.entries(m.comp).map(([k, v]) => `<span>${k}</span><span>${fmt(v)} %</span>`).join('')}</div></div>`).join('')}</div><div class="legend rv">${Object.entries(C).map(([k, v]) => `<span><b style="background:${v}"></b>${k}</span>`).join('')}</div>`, '01') +
       sect('Minions: coste de subir al nivel 10', '<div id="mn" class="rv"></div>', '02') +
-      sect('Protecciones', `<div class="cards">${[['16×16', '20.000', 'yellow_glazed_terracotta'], ['32×32', '60.000', 'lime_glazed_terracotta'], ['64×64', '120.000', 'light_blue_glazed_terracotta'], ['128×128', 'solo web', 'magenta_glazed_terracotta'], ['256×256', 'solo web', 'red_glazed_terracotta']].map(([s, p, i], n) => `<div class="cc glass spot rv" style="--d:${n * 60}ms"><h3>${ico(i)}${s}</h3><div class="kv"><span>Precio</span><span>${p}</span></div></div>`).join('')}</div>`, '03') + fichas('mundo');
+      sect('Protecciones', `<div class="cards">${[['16×16', '20.000', 'yellow_glazed_terracotta'], ['32×32', '60.000', 'lime_glazed_terracotta'], ['64×64', '120.000', 'light_blue_glazed_terracotta'], ['128×128', 'solo web', 'magenta_glazed_terracotta'], ['256×256', 'solo web', 'red_glazed_terracotta']].map(([s, p, i], n) => `<div class="cc glass spot rv" style="--d:${n * 60}ms"><h3>${s}</h3><div class="kv"><span>Precio</span><span>${p}</span></div></div>`).join('')}</div>`, '03') + fichas('mundo');
     table($('#mn', el), [{ k: 'minion', l: 'Minion' }, { k: 'n1', l: 'Nivel 1' }, { k: 'n10', l: 'Nivel 10' }, { k: 'coste', l: 'Coste total', t: 'bar' }], D.minions, { sort: 'coste', name: 'minions' });
   },
 };
@@ -585,12 +592,12 @@ nav.addEventListener('click', e => { if (e.target.closest('a')) closeNav(); });
 const IDX = [...D.armaduras.map(s => ({ t: s.nombre, s: 'Armadura · ' + s.origen + ' · ' + NF.format(s.poder), v: 'tl-armaduras/' + s.id, i: ico(s.icon, s.dye), g: 'Armaduras', w: 6 })),
   ...D.armas.map(a => ({ t: a.nombre, s: 'Arma · ' + a.clase + ' · ' + NF.format(a.poder), v: 'tl-armas/' + a.id, i: ico(a.icon), g: 'Armas', w: 5 })),
   ...D.anomalias.map(a => ({ t: a.nombre, s: 'Anomalía · ' + a.clase, v: 'tl-anomalias/' + a.id, i: face(a), g: 'Anomalías', w: 6 })),
-  ...D.premios.map(p => ({ t: p.premio, s: 'Premio · Caja ' + p.caja + ' · ' + NF.format(p.pct) + ' %', v: 'cajas', i: ico('tripwire_hook'), f: p.premio, g: 'Premios', w: 2 })),
-  ...D.encantamientos.map(e => ({ t: e.nombre, s: 'Encantamiento · ' + e.tier + ' · ' + e.para, v: 'encantamientos', i: ico('enchanted_book'), f: e.nombre, g: 'Encantamientos', w: 3 })),
+  ...D.premios.map(p => ({ t: p.premio, s: 'Premio · Caja ' + p.caja + ' · ' + NF.format(p.pct) + ' %', v: 'cajas', i: tag('Caja'), f: p.premio, g: 'Premios', w: 2 })),
+  ...D.encantamientos.map(e => ({ t: e.nombre, s: 'Encantamiento · ' + e.tier + ' · ' + e.para, v: 'encantamientos', i: tag('Enc'), f: e.nombre, g: 'Encantamientos', w: 3 })),
   ...D.jefes.map(j => ({ t: j.mob, s: 'Mob de mazmorra · ' + NF.format(j.vida) + ' de vida', v: 'mazmorras', i: mobFace(j), f: j.mob, g: 'Mazmorras', w: 3 })),
   ...D.mascotas.map(m => ({ t: m.mascota, s: 'Mascota · ' + (m.fuente || ''), v: 'mascotas', i: ico(m.icon), f: m.mascota, g: 'Mascotas', w: 2 })),
-  ...D.tags.map(t => ({ t: t.tag, s: 'Tag · ' + t.categoria, v: 'tags', i: ico('name_tag'), f: t.tag, g: 'Tags', w: 1 })),
-  ...D.mc_tiendas.map(t => ({ t: t.articulo, s: t.tienda + ' · ' + NF.format(t.precio) + ' MC', v: 'economia', i: ico('sunflower'), f: t.articulo, g: 'Tiendas de MobCoins', w: 1 })),
+  ...D.tags.map(t => ({ t: t.tag, s: 'Tag · ' + t.categoria, v: 'tags', i: tag('Tag'), f: t.tag, g: 'Tags', w: 1 })),
+  ...D.mc_tiendas.map(t => ({ t: t.articulo, s: t.tienda + ' · ' + NF.format(t.precio) + ' MC', v: 'economia', i: tag('MC'), f: t.articulo, g: 'Tiendas de MobCoins', w: 1 })),
   ...VIEWS.map(v => ({ t: v.t, s: 'Sección' + (v.d ? ' · ' + v.d : ''), v: v.id, i: ico(v.ic), g: 'Secciones', w: 9 }))].map(e => ({ ...e, n: norm(e.t + ' ' + e.s), nt: norm(e.t) }));
 const pal = $('#pal'), q = $('#q'), res = $('#res'); let hits = [], sel = 0, palBack = null;
 function openPal(pre = '') { palBack = document.activeElement; pal.classList.add('on'); q.value = pre; search(); setTimeout(() => q.focus(), 30); }
