@@ -91,6 +91,11 @@ function hydrateFaces(root) {
     });
   });
 }
+// nombres de mobs y objetivos tal y como vienen de la config (ids en minúscula) → legibles
+const MOBN = { GuardianDeLaMazmorra: 'Guardián de la Mazmorra', Dragon1: 'Dragón 1', Dragon2: 'Dragón 2' };
+const mobName = n => MOBN[n] || String(n ?? '').replace(/_/g, ' ').replace(/([a-záéíóúñ])([A-Z0-9])/g, '$1 $2').replace(/\s+/g, ' ').trim()
+  .replace(/(^|\s)(\S)/g, (m, a, b) => a + b.toUpperCase()).replace(/ (De|Del|La|Las|Los|Y) /g, m => m.toLowerCase());
+const sentence = t => { t = String(t ?? '').replace(/_/g, ' '); return t.charAt(0).toUpperCase() + t.slice(1); };
 const tag = t => `<span class="tagbox">${t}</span>`;
 const eggOf = n => ico(String(n).trim().toLowerCase().replace(/\s+/g, '_') + '_spawn_egg');
 const mobFace = j => j.skin ? `<span class="face"><img alt="" loading="lazy" src="${j.skin}"></span>` : ico(j.icon);
@@ -397,7 +402,7 @@ function answers() {
     ['¿Qué caja da más dinero por llave?', cajaD.caja, fmt(cajaD.ev_dinero) + ' de media', ico('trial_key'), '#cajas'],
     ['¿Y más MobCoins por llave?', cajaM.caja, fmt(cajaM.ev_mc) + ' MC de media', ico('ominous_trial_key'), '#cajas'],
     ['¿Qué anomalía da más MobCoins?', anMC.nombre, fmt(anMC.mobcoins) + ' MC por participante', face(anMC), '#tl-anomalias/' + anMC.id],
-    ['¿Qué mob suelta más MobCoins?', mob.mob, fmt(mob.media) + ' MC por muerte', eggOf(mob.mob), '#economia'],
+    ['¿Qué mob suelta más MobCoins?', mobName(mob.mob), fmt(mob.media) + ' MC por muerte', eggOf(mob.mob), '#economia'],
     vip && ['¿Mejor set de origen VIP?', vip.nombre, fmt(vip.poder) + ' de poder', ico(vip.icon, vip.dye), '#tl-armaduras/' + vip.id],
     caj && ['¿Mejor set de cajas y eventos?', caj.nombre, fmt(caj.poder) + ' de poder', ico(caj.icon, caj.dye), '#tl-armaduras/' + caj.id],
     cal && ['¿Mejor set de Calamity?', cal.nombre, fmt(cal.poder) + ' de poder', ico(cal.icon, cal.dye), '#tl-armaduras/' + cal.id],
@@ -491,10 +496,10 @@ const B = {
     el.innerHTML = head('economia', 'Economía y MobCoins', 'Dónde nace el dinero, dónde muere y cuánto vale cada cosa en MobCoins.', [['Artículos en /shop', D.shop.length], ['Pagos de Jobs', D.jobs.length], ['Tiendas de MC', new Set(D.mc_tiendas.map(t => t.tienda)).size]]) +
       sect('De dónde sale el dinero', `<div class="glass rv"><div class="hbars">${src.map(([n, v], i) => `<div class="hb" style="--i:${i}"><span>${n}</span><div class="tr"><i style="--w:${v / m}"></i></div><b>${fmt(v)}</b></div>`).join('')}<div class="hb-total"><span>Si sumas todas las fuentes</span><b>${fmt(src.reduce((a, s) => a + s[1], 0))}</b></div></div></div>`, '01') +
       sect('MobCoins por mob', '<div id="mc" class="rv"></div>', '02') + sect('Tiendas de MobCoins', '<div id="mt" class="rv"></div>', '03') + sect('/shop: compra y venta', '<div id="sh" class="rv"></div>', '04') + sect('Jobs: pago por acción (nivel 1)', '<div id="jb" class="rv"></div>', '05') + fichas('economia');
-    table($('#mc', el), [{ k: 'mob', l: 'Mob' }, { k: 'prob', l: 'Prob.', t: 'num', u: ' %' }, { k: 'cantidad', l: 'Cantidad' }, { k: 'media', l: 'Media por muerte', t: 'bar' }], D.mc_drops, { sort: 'media', name: 'mobcoins' });
+    table($('#mc', el), [{ k: 'mob', l: 'Mob', render: (r, re) => `<span class="row">${eggOf(r.mob)}<b>${hl(mobName(r.mob), re)}</b></span>` }, { k: 'prob', l: 'Prob.', t: 'num', u: ' %' }, { k: 'cantidad', l: 'Cantidad' }, { k: 'media', l: 'Media por muerte', t: 'bar' }], D.mc_drops, { sort: 'media', name: 'mobcoins' });
     table($('#mt', el), [{ k: 'tienda', l: 'Tienda' }, { k: 'articulo', l: 'Artículo', render: (r, re) => `<b>${hl(r.articulo, re)}</b>` }, { k: 'precio', l: 'Precio (MC)', t: 'bar' }, { k: 'stock', l: 'Stock', t: 'num' }, { k: 'limite', l: 'Límite por jugador', t: 'num' }], D.mc_tiendas, { filters: ['tienda'], sort: 'precio', name: 'tiendas-mc' });
     table($('#sh', el), [{ k: 'seccion', l: 'Sección' }, { k: 'articulo', l: 'Artículo' }, { k: 'compra', l: 'Compra', t: 'num' }, { k: 'venta', l: 'Venta', t: 'bar' }], D.shop, { filters: ['seccion'], sort: 'venta', name: 'shop' });
-    table($('#jb', el), [{ k: 'oficio', l: 'Oficio' }, { k: 'accion', l: 'Acción' }, { k: 'objetivo', l: 'Objetivo' }, { k: 'dinero', l: 'Dinero', t: 'bar' }, { k: 'exp', l: 'XP', t: 'num' }], D.jobs, { filters: ['oficio', 'accion'], sort: 'dinero', name: 'jobs' });
+    table($('#jb', el), [{ k: 'oficio', l: 'Oficio' }, { k: 'accion', l: 'Acción' }, { k: 'objetivo', l: 'Objetivo', render: (r, re) => hl(sentence(r.objetivo), re) }, { k: 'dinero', l: 'Dinero', t: 'bar' }, { k: 'exp', l: 'XP', t: 'num' }], D.jobs, { filters: ['oficio', 'accion'], sort: 'dinero', name: 'jobs' });
   },
   progresion(el) {
     el.innerHTML = head('progresion', 'Rankup, playtime y misiones', 'Lo que se gana subiendo de rango, jugando horas y haciendo misiones.', [['Rankups', D.rankup.length], ['Niveles de playtime', D.playtime.length], ['Misiones', D.misiones.length]]) +
@@ -502,7 +507,7 @@ const B = {
     chartPlaytime($('#ch', el));
     table($('#rk', el), [{ k: 'rango', l: 'Rango', t: 'num' }, { k: 'requisitos', l: 'Requisitos', t: 'num' }, { k: 'horas', l: 'Horas mín.', t: 'num' }, { k: 'dinero', l: 'Dinero', t: 'bar' }, { k: 'mobcoins', l: 'MobCoins', t: 'num' }, { k: 'exp', l: 'XP', t: 'num' }, { k: 'extras', l: 'Extras' }], D.rankup, { sort: 'rango', dir: 1, name: 'rankup' });
     table($('#pt', el), [{ k: 'nivel', l: 'Nivel', t: 'num' }, { k: 'horas', l: 'Horas', t: 'num' }, { k: 'dinero', l: 'Dinero', t: 'bar' }, { k: 'mobcoins', l: 'MobCoins', t: 'num' }, { k: 'exp', l: 'Niveles de XP', t: 'num' }, { k: 'extras', l: 'Extras' }], D.playtime, { sort: 'nivel', dir: 1, name: 'playtime' });
-    table($('#ms', el), [{ k: 'categoria', l: 'Categoría' }, { k: 'mision', l: 'Misión' }, { k: 'objetivo', l: 'Objetivo' }, { k: 'dinero', l: 'Dinero', t: 'bar' }, { k: 'niveles', l: 'Niveles', t: 'num' }, { k: 'mobcoins', l: 'MobCoins', t: 'num' }], D.misiones, { filters: ['categoria'], sort: 'dinero', name: 'misiones' });
+    table($('#ms', el), [{ k: 'categoria', l: 'Categoría' }, { k: 'mision', l: 'Misión' }, { k: 'objetivo', l: 'Objetivo', render: (r, re) => hl(sentence(r.objetivo), re) }, { k: 'dinero', l: 'Dinero', t: 'bar' }, { k: 'niveles', l: 'Niveles', t: 'num' }, { k: 'mobcoins', l: 'MobCoins', t: 'num' }], D.misiones, { filters: ['categoria'], sort: 'dinero', name: 'misiones' });
   },
   rangos(el) {
     const R = [['Precio', '—', '15 $', '20 $', '25 $', '42,99 $'], ['Homes', '1', '5', '10', '15', '30'], ['Protecciones', '1', '4', '10', '10', '20'], ['Minions', '5', '10', '20', '∞', '∞'], ['Subastas', '1', '5', '10', '20', '20'], ['Bóvedas /pv', '1', '4', '5', '6', '15'], ['Warps personales', '—', '3', '4', '5', '5'], ['Trabajos a la vez', '—', '5', '8', '12', '12'], ['XP de habilidades', '—', '—', '+20 %', '+35 %', '+50 %'], ['Recompensa diaria', '1.000 $', '11.000 $', '36.000 $', '86.000 $', '161.000 $'], ['Kit semanal (poder del set)', '—', '3.120', '3.760', '4.400', '5.080'], ['Fly · autosell · TP sin espera', '—', '✔', '✔', '✔', '✔'], ['Conservar inventario*', '—', '✔', '✔', '✔', '✔'], ['Conservar EXP', '—', '—', '—', '✔', '✔'], ['/itemname, /sit', '—', '—', '✔', '✔', '✔'], ['/hat, /ptime, /lay', '—', '—', '—', '✔', '✔'], ['Efectos RIP', '—', '10', '20', '32', '42'], ['Glow', '—', '16 colores', '16', '16 + parpadeo', '+ arcoíris']];
