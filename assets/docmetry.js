@@ -86,16 +86,6 @@ document.addEventListener('pointermove', e => {
   const c = e.target.closest && e.target.closest('.spot'); if (!c) return;
   const r = c.getBoundingClientRect(); c.style.setProperty('--mx', (e.clientX - r.left) + 'px'); c.style.setProperty('--my', (e.clientY - r.top) + 'px');
 }, { passive: true });
-// botones magnéticos
-if (!RM && matchMedia('(pointer:fine)').matches) {
-  document.addEventListener('pointermove', e => {
-    const b = e.target.closest && e.target.closest('[data-mag]');
-    $$('[data-mag].mag-on').forEach(o => { if (o !== b) { o.style.transform = ''; o.classList.remove('mag-on'); } });
-    if (!b) return; const r = b.getBoundingClientRect();
-    b.classList.add('mag-on'); b.style.transform = `translate(${(e.clientX - r.left - r.width / 2) * .18}px,${(e.clientY - r.top - r.height / 2) * .28}px)`;
-  }, { passive: true });
-}
-
 // ---------- vistas
 const VIEWS = [
   { g: 'Empieza aquí', id: 'inicio', t: 'Inicio', ic: 'knowledge_book' },
@@ -120,8 +110,8 @@ const pad = n => String(n).padStart(2, '0');
 const nav = $('#nav'), main = $('#main');
 {
   let lastG = '';
-  nav.innerHTML = VIEWS.map(v => { const h = v.g !== lastG ? `<div class="rail__grp">${v.g}</div>` : ''; lastG = v.g; return h + `<a href="#${v.id}" data-v="${v.id}">${ico(v.ic)}<span>${v.t}</span>${v.n ? `<span class="n">${v.n()}</span>` : ''}</a>`; }).join('') +
-    `<div class="rail__foot"><b>Atajos</b><br><kbd>${MAC ? '⌘' : 'Ctrl'}</kbd> <kbd>K</kbd> o <kbd>/</kbd> para buscar · <kbd>Esc</kbd> para cerrar fichas.</div>`;
+  nav.innerHTML = VIEWS.map(v => { const h = v.g !== lastG ? `<div class="rail__grp">${v.g}</div>` : ''; lastG = v.g; return h + `<a href="#${v.id}" data-v="${v.id}" data-num="${pad(VI[v.id].i)}">${ico(v.ic)}<span>${v.t}</span>${v.n ? `<span class="n">${v.n()}</span>` : ''}</a>`; }).join('') +
+    `<div class="rail__foot"><b>Atajos</b><kbd>${MAC ? '⌘' : 'Ctrl'}</kbd> <kbd>K</kbd> o <kbd>/</kbd> para buscar · <kbd>Esc</kbd> para cerrar fichas.</div>`;
   hydrate(nav);
 }
 
@@ -213,7 +203,8 @@ function tierlist(el, items, o) {
     d.dataset.n = norm(it[o.name]); d.dataset.g = o.group(it); d.dataset.id = it.id;
     d.style.setProperty('--c', it.col || TC[it.tier]); d.style.setProperty('--i', Math.min(i++, 60));
     d.setAttribute('aria-label', `${it[o.name]}, tier ${it.tier}`);
-    d.innerHTML = `${o.icon(it)}<span class="nm">${esc(it[o.name])}</span><span class="pw">${o.label ? o.label(it) : fmt(o.value(it))}</span>`;
+    if (o.tip) d.dataset.tip = o.tip + ':' + it.id;
+    d.innerHTML = `<span class="slot${it.tier === 'EX' ? ' glint' : ''}">${o.icon(it)}</span><span class="nm">${esc(it[o.name])}</span><span class="pw">${o.label ? o.label(it) : fmt(o.value(it))}</span>`;
     d.addEventListener('click', () => o.detail(it)); d.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); o.detail(it); } });
     c.appendChild(d);
   });
@@ -331,58 +322,53 @@ const tierStats = (list, tiers) => tiers.map(t => [`Tier ${t}`, list.filter(x =>
 const B = {
   inicio(el) {
     const topA = [...D.armaduras].sort((a, b) => b.poder - a.poder), topW = [...D.armas].sort((a, b) => b.poder - a.poder), topN = [...D.anomalias].sort((a, b) => b.dificultad - a.dificultad);
-    const vidas = D.anomalias.map(a => a.vida), cajasN = D.cajas.length, tiersE = new Set(D.encantamientos.map(e => e.tier)).size;
-    const k = (t, v, s, ic, i) => `<div class="kpi rv" style="--d:${i * 70}ms"><div class="k">${t}</div><div class="v" data-count="${v}">0</div><div class="s">${s}</div>${ico(ic)}</div>`;
-    const letters = (w, cls) => [...w].map((ch, i) => `<span class="l${cls || ''}"><span style="--i:${i + (cls ? 3 : 0)}">${ch}</span></span>`).join('');
+    const vidas = D.anomalias.map(a => a.vida), tiersE = new Set(D.encantamientos.map(e => e.tier)).size;
+    const total = D.armaduras.length + D.armas.length + D.anomalias.length + D.premios.length + D.encantamientos.length + D.mascotas.length + D.tags.length + D.jefes.length;
+    const k = (t, v, s, ic) => `<div class="kpi"><div class="k">${t}</div><div class="v" data-count="${v}">0</div><div class="s">${s}</div>${ico(ic)}</div>`;
+    const word = [...'DOCMETRY'].map((ch, i) => `<span style="--i:${i}"${i > 2 ? ' class="az"' : ''}>${ch}</span>`).join('');
+    const slot = (kind, it, art, v) => `<button type="button" class="slot${it.tier === 'EX' ? ' glint' : ''}" data-tip="${kind}:${esc(it.id)}" data-go="${v}/${esc(it.id)}" aria-label="${esc(it.nombre)}, tier ${it.tier}">${art}<span class="q">${it.tier}</span></button>`;
+    const inv = topA.slice(0, 9).map(s => slot('a', s, ico(s.icon, s.dye), 'tl-armaduras')).join('') + topW.slice(0, 9).map(a => slot('w', a, ico(a.icon), 'tl-armas')).join('') + topN.slice(0, 9).map(a => slot('n', a, face(a), 'tl-anomalias')).join('');
     const mq = [...topA.slice(0, 10).map(s => ({ v: 'tl-armaduras', it: s, i: ico(s.icon, s.dye) })), ...topW.slice(0, 8).map(a => ({ v: 'tl-armas', it: a, i: ico(a.icon) })), ...topN.slice(0, 6).map(a => ({ v: 'tl-anomalias', it: a, i: face(a), val: '♥ ' + fmtK(a.vida) }))];
-    const mqHtml = mq.map(m => `<button type="button" class="mq-item" data-go="${m.v}/${esc(m.it.id)}">${m.i}<b>${esc(m.it.nombre)}</b><span class="pill tier-${m.it.tier}">${m.it.tier}</span><span>${m.val || fmt(m.it.poder)}</span></button>`).join('');
-    const champ = (kind, it, val, unit, art, v) => `<button type="button" class="champ glass spot rv" style="--c:${it.col || TC[it.tier]}" data-go="${v}/${esc(it.id)}"><div class="champ__top"><div><div class="champ__k">${kind}</div></div><div class="champ__rank">#1</div></div><div class="champ__art">${art}</div><div><h3>${esc(it.nombre)}</h3><div class="champ__v"><b>${val}</b>${unit} <span class="pill tier-${it.tier}">${it.tier}</span></div></div></button>`;
-    const bento = VIEWS.filter(v => v.id !== 'inicio').map((v, i) => {
-      const strip = v.id === 'tl-armaduras' ? topA.slice(0, 6).map(s => ico(s.icon, s.dye)).join('') : v.id === 'tl-armas' ? topW.slice(0, 5).map(a => ico(a.icon)).join('') : '';
-      return `<a class="bx ${v.w} glass spot rv" style="--d:${(i % 3) * 70}ms" href="#${v.id}"><div class="bx__top"><span class="bx__ic">${ico(v.ic)}</span><span class="bx__n">${pad(i + 1)}</span></div><div><h3>${v.t}</h3><p>${v.d}</p>${strip ? `<div class="bx__strip">${strip}</div>` : ''}</div><div class="bx__go"><span>${v.n ? NF.format(v.n()) + ' entradas' : 'Ver sección'}</span>${SVG.ne}</div></a>`;
-    }).join('');
-    el.innerHTML = `<section class="hero" id="hero"><canvas aria-hidden="true"></canvas>
-      <div class="hero__in"><div class="hero__txt">
-        <div class="hero__meta"><span class="live"><i></i>Datos del servidor · 31/10/2026</span><span class="chip">${NF.format(D.armaduras.length + D.armas.length + D.anomalias.length + D.premios.length + D.encantamientos.length + D.mascotas.length + D.tags.length + D.jefes.length)} <b>fichas</b></span></div>
-        <h1 aria-label="Docmetry">${letters('DOC')}${letters('METRY', ' ac')}</h1>
-        <p class="hero__lead">La guía del <b>Survival de Ederus</b>, medida al detalle. ${PUB ? 'Equipo, jefes, cajas, economía y rangos del Survival a 31/10/2026, sacados de la configuración real. Toca cualquier objeto para ver su ficha.' : ''}</p>
-        <div class="hero__cta"><a class="btn btn--p" data-mag href="#tl-armaduras">Ver las tier lists ${SVG.arrow}</a><button type="button" class="btn" data-mag data-open-search>${SVG.search.replace('stroke-width="2"', 'stroke="currentColor" stroke-width="2"')}Buscar <kbd>${MAC ? '⌘' : 'Ctrl'} K</kbd></button></div>
-      </div>
-      <div class="hero__orbit" aria-hidden="true"><div class="orbit-ring"></div><div class="orbit-ring r2"></div><div class="orbit-ring r3"></div>
-        <div class="orbit-core">${ico('nether_star')}</div>
-        <div class="float" style="top:2%;left:16%;--z:-28;--dl:0s">${ico(topA[0].icon, topA[0].dye)}<small>${esc(topA[0].nombre)}</small></div>
-        <div class="float" style="top:12%;right:2%;--z:22;--dl:-1.5s">${ico(topW[0].icon)}<small>${esc(topW[0].nombre)}</small></div>
-        <div class="float" style="bottom:12%;left:0;--z:18;--dl:-3s">${ico('tripwire_hook')}<small>${D.cajas.length} cajas</small></div>
-        <div class="float" style="bottom:0;right:18%;--z:-20;--dl:-4.5s">${ico('enchanted_book')}<small>${D.encantamientos.length} encantamientos</small></div>
-        <div class="float" style="top:46%;right:-4%;--z:12;--dl:-2.2s">${ico('gold_ingot')}<small>Economía</small></div>
-      </div></div>
-      <a class="scroll-cue" href="#inicio-kpis" aria-label="Bajar"><i></i>SCROLL</a></section>
+    const mqHtml = mq.map(m => `<button type="button" class="mq-item" data-go="${m.v}/${esc(m.it.id)}">${m.i}${esc(m.it.nombre)}<span class="pill tier-${m.it.tier}">${m.it.tier}</span><span>${m.val || fmt(m.it.poder)}</span></button>`).join('');
+    const champ = (kind, it, val, unit, art, v, tk) => `<button type="button" class="champ" style="--c:${TC[it.tier]}" data-go="${v}/${esc(it.id)}" data-tip="${tk}:${esc(it.id)}"><div class="champ__top"><span class="champ__k">${kind}</span><span class="champ__rank">Nº 1</span></div><div class="champ__art${it.tier === 'EX' ? ' glint' : ''}">${art}</div><div><h3>${esc(it.nombre)}</h3><div class="champ__v"><b>${val}</b>${unit} <span class="pill tier-${it.tier}">${it.tier}</span></div></div></button>`;
+    let lastG = '', n = 0;
+    const toc = VIEWS.filter(v => v.id !== 'inicio').map(v => { const g = v.g !== lastG ? `<div class="grp">${v.g}</div>` : ''; lastG = v.g; n++;
+      return g + `<a href="#${v.id}"><span class="no">${pad(n)}</span><span class="slot">${ico(v.ic)}</span><h3>${v.t}</h3><p>${v.d}</p><span class="ct">${v.n ? NF.format(v.n()) + ' entradas' : 'Sistema'}</span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>`; }).join('');
+    el.innerHTML = `<section class="mast">
+      <div class="mast__rule"><span class="live"><b>Datos del servidor</b> · 31/10/2026</span><span>Ederus · Survival</span><span>${NF.format(total)} fichas</span><span>Edición pública</span></div>
+      <div class="mast__word"><h1 aria-label="Docmetry">${word}</h1></div>
+      <div class="mast__grid">
+        <div class="mast__lead"><p>La guía del Survival de Ederus, medida al detalle: qué equipo pega más, qué jefe aguanta más y cuánto vale cada cosa.</p>
+          ${PUB ? '<small>Equipo, jefes, cajas, economía y rangos del Survival a 31/10/2026, sacados de la configuración real. Toca cualquier objeto para ver su ficha.</small>' : ''}
+          <div class="mast__cta"><a class="btn btn--p" href="#tl-armaduras">Ver las tier lists ${SVG.arrow}</a><button type="button" class="btn" data-open-search>${SVG.search.replace('stroke-width="2"', 'stroke="currentColor" stroke-width="2.5"')}Buscar <kbd>${MAC ? '⌘' : 'Ctrl'} K</kbd></button></div></div>
+        <div class="mast__inv"><div class="inv-h"><span><b>Inventario de élite</b> · lo mejor de cada lista</span><span>Fila 1 armaduras · 2 armas · 3 anomalías</span></div>
+          <div class="inv">${inv}</div><div class="inv-note">Pasa el ratón por una casilla para ver sus estadísticas. Haz clic para abrir la ficha.</div></div>
+      </div></section>
     <div class="marquee" aria-label="Lo más fuerte del Survival"><div class="marquee__track">${mqHtml}${mqHtml.replace(/<button /g, '<button tabindex="-1" aria-hidden="true" ')}</div></div>
-    <div class="kpis" id="inicio-kpis">${k('Sets de armadura', D.armaduras.length, `${esc(topA[0].nombre)} · ${fmt(topA[0].poder)} es el top`, 'netherite_chestplate', 0)}${k('Armas', D.armas.length, `poder de ${fmt(topW[topW.length - 1].poder)} a ${fmt(topW[0].poder)}`, 'netherite_sword', 1)}${k('Anomalías', D.anomalias.length, `de ${fmt(Math.min(...vidas))} a ${fmt(Math.max(...vidas))} de vida`, 'nether_star', 2)}${k('Premios en cajas', D.premios.length, `${cajasN} cajas`, 'tripwire_hook', 3)}${k('Encantamientos', D.encantamientos.length, `${tiersE} tiers`, 'enchanted_book', 4)}${PUB ? k('Mascotas', D.mascotas.length, 'de CombatPets', 'wolf_spawn_egg', 5) : ''}</div>
-    ${sect('Lo más fuerte del Survival', `<div class="podium">${champ('Armadura', topA[0], fmt(topA[0].poder), 'de poder', ico(topA[0].icon, topA[0].dye, 1), 'tl-armaduras')}${champ('Arma', topW[0], fmt(topW[0].poder), 'de poder', ico(topW[0].icon, null, 1), 'tl-armas')}${champ('Anomalía', topN[0], fmtK(topN[0].vida), 'de vida', face(topN[0]), 'tl-anomalias')}</div>`, '01', 'El número uno de cada tier list. Toca para abrir su ficha.')}
-    ${sect('Todo lo que hay dentro', `<div class="bento">${bento}</div>`, '02', 'Tier lists, base de datos y sistemas del servidor.')}
-    ${sect('Cómo sacarle partido', `<div class="tips">${[['Toca cualquier objeto', 'Sets, armas y anomalías abren su ficha con estadísticas, piezas y habilidades.'], [`Busca con ${MAC ? '⌘' : 'Ctrl'} K`, 'Un buscador para todo: premios, encantamientos, mobs, tags y tiendas.'], ['Compara hasta 4', 'Añade sets o armas al comparador desde su ficha y míralos lado a lado.'], ['Comparte el enlace', 'Cada ficha tiene su propia dirección. Cópiala y pásala por Discord.']].map(([t, s], i) => `<div class="tip glass rv" style="--d:${i * 70}ms"><span class="tip__n">${pad(i + 1)}</span><div><b>${t}</b><span>${s}</span></div></div>`).join('')}</div>`, '03')}`;
+    <div class="band" id="inicio-kpis"><div class="kpis">${k('Sets de armadura', D.armaduras.length, `${esc(topA[0].nombre)} · ${fmt(topA[0].poder)} es el top`, 'netherite_chestplate')}${k('Armas', D.armas.length, `poder de ${fmt(topW[topW.length - 1].poder)} a ${fmt(topW[0].poder)}`, 'netherite_sword')}${k('Anomalías', D.anomalias.length, `de ${fmt(Math.min(...vidas))} a ${fmt(Math.max(...vidas))} de vida`, 'nether_star')}${k('Premios en cajas', D.premios.length, `${D.cajas.length} cajas`, 'tripwire_hook')}${k('Encantamientos', D.encantamientos.length, `${tiersE} tiers`, 'enchanted_book')}${PUB ? k('Mascotas', D.mascotas.length, 'de CombatPets', 'wolf_spawn_egg') : ''}</div></div>
+    ${sect('El número uno', `<div class="podium rv">${champ('Armadura', topA[0], fmt(topA[0].poder), 'de poder', ico(topA[0].icon, topA[0].dye, 1), 'tl-armaduras', 'a')}${champ('Arma', topW[0], fmt(topW[0].poder), 'de poder', ico(topW[0].icon, null, 1), 'tl-armas', 'w')}${champ('Anomalía', topN[0], fmtK(topN[0].vida), 'de vida', face(topN[0]), 'tl-anomalias', 'n')}</div>`, '§1', 'Lo primero de cada tier list. Toca para abrir su ficha.')}
+    ${sect('Índice', `<nav class="toc rv" aria-label="Índice">${toc}</nav>`, '§2', 'Tier lists, base de datos y sistemas del servidor.')}
+    ${sect('Cómo se usa', `<div class="tips rv">${[['Toca cualquier objeto', 'Sets, armas y anomalías abren su ficha con estadísticas, piezas y habilidades.'], [`Busca con ${MAC ? '⌘' : 'Ctrl'} K`, 'Un buscador para todo: premios, encantamientos, mobs, tags y tiendas.'], ['Compara hasta 4', 'Añade sets o armas al comparador desde su ficha y míralos lado a lado.'], ['Comparte el enlace', 'Cada ficha tiene su propia dirección. Cópiala y pásala por Discord.']].map(([t, s], i) => `<div class="tip"><span class="tip__n">${pad(i + 1)}</span><b>${t}</b><span>${s}</span></div>`).join('')}</div>`, '§3')}`;
     $$('[data-go]', el).forEach(b => b.addEventListener('click', () => { location.hash = b.dataset.go; }));
-    heroFx($('#hero', el));
   },
   'tl-armaduras'(el) {
     el.innerHTML = head('tl-armaduras', 'Tier list de armaduras', 'Poder del set con la fórmula de la guía. EX ≥ 6.800 (Veyra, el set top) · S ≥ 5.080 · A ≥ 4.000 · B ≥ 3.000 · C ≥ 2.000. Toca un set para ver sus piezas.', tierStats(D.armaduras, ['EX', 'S', 'A', 'B', 'C', 'D'])) +
       `<div id="tl" class="rv"></div>` + sect('Todas las armaduras', '<div id="tb" class="rv"></div>', 'DB', 'Pulsa una fila para abrir la ficha. Ordena tocando la cabecera.') + fichas('armaduras');
     const G = ['Anomalía', 'Mazmorra', 'Cajas y eventos', 'VIP', 'Calamity', 'Playtime (God Kit)'];
-    tierlist($('#tl', el), D.armaduras.filter(s => G.includes(s.origen)), { groups: G, tiers: ['EX', 'S', 'A', 'B', 'C', 'D'], group: s => s.origen, name: 'nombre', value: s => s.poder, icon: s => ico(s.icon, s.dye, 1), detail: setDetail });
+    tierlist($('#tl', el), D.armaduras.filter(s => G.includes(s.origen)), { groups: G, tiers: ['EX', 'S', 'A', 'B', 'C', 'D'], group: s => s.origen, name: 'nombre', value: s => s.poder, icon: s => ico(s.icon, s.dye, 1), detail: setDetail, tip: 'a' });
     table($('#tb', el), [{ k: 'nombre', l: 'Set', render: (r, re) => `<span class="row">${ico(r.icon, r.dye)}<b>${hl(r.nombre, re)}</b></span>` }, { k: 'origen', l: 'Origen' }, { k: 'tier', l: 'Tier', t: 'tier' }, { k: 'poder', l: 'Poder', t: 'bar' }, { k: 'armadura', l: 'Armadura', t: 'num' }, { k: 'dureza', l: 'Dureza', t: 'num' }, { k: 'vida', l: 'Vida extra', t: 'num' }], D.armaduras, { filters: ['origen', 'tier'], sort: 'poder', onRow: setDetail, name: 'armaduras' });
   },
   'tl-armas'(el) {
     el.innerHTML = head('tl-armas', 'Tier list de armas', 'Poder = (golpe medio − 1) × 60, con críticos (MythicLib ×2 + el % del arma). S ≥ 4.600 · A ≥ 3.000 · B ≥ 1.900 · C ≥ 1.000. Los arcos no cuentan el encantamiento Poder.', tierStats(D.armas, ['EX', 'S', 'A', 'B', 'C', 'D'])) +
       `<div id="tl" class="rv"></div>` + sect('Todas las armas', '<div id="tb" class="rv"></div>', 'DB', 'Incluye las de tier D, que no salen en la tier list.') + fichas('armas');
     const G = ['Espada', 'Hacha', 'Lanza', 'Tridente', 'Arco', 'Ballesta', 'Mazo'];
-    tierlist($('#tl', el), D.armas.filter(a => a.tier !== 'D'), { groups: G.filter(g => D.armas.some(a => a.clase === g)), tiers: ['EX', 'S', 'A', 'B', 'C'], group: a => a.clase, name: 'nombre', value: a => a.poder, icon: a => ico(a.icon, null, 1), detail: armaDetail });
+    tierlist($('#tl', el), D.armas.filter(a => a.tier !== 'D'), { groups: G.filter(g => D.armas.some(a => a.clase === g)), tiers: ['EX', 'S', 'A', 'B', 'C'], group: a => a.clase, name: 'nombre', value: a => a.poder, icon: a => ico(a.icon, null, 1), detail: armaDetail, tip: 'w' });
     table($('#tb', el), [{ k: 'nombre', l: 'Arma', render: (r, re) => `<span class="row">${ico(r.icon)}<b>${hl(r.nombre, re)}</b></span>` }, { k: 'clase', l: 'Clase' }, { k: 'origen', l: 'Origen' }, { k: 'tier', l: 'Tier', t: 'tier' }, { k: 'dano', l: 'Daño', t: 'num' }, { k: 'critico', l: 'Crítico', t: 'num', u: ' %' }, { k: 'max', l: 'Daño crítico', t: 'num' }, { k: 'poder', l: 'Poder', t: 'bar' }], D.armas, { filters: ['clase', 'origen', 'tier'], sort: 'poder', onRow: armaDetail, name: 'armas' });
   },
   'tl-anomalias'(el) {
     el.innerHTML = head('tl-anomalias', 'Tier list de anomalías', 'Puntuación = vida × daño medio por golpe (media de sus habilidades con el multiplicador de su ficha). ♥ vida · ⚔ daño medio. Pulsa una para ver todas sus habilidades a ×1 y a su multiplicador.', tierStats(D.anomalias, ['S', 'A', 'B', 'C', 'D'])) +
       `<div id="tl" class="rv"></div>` + sect('Comparativa', '<div id="tb" class="rv"></div>', 'DB') + fichas('anomalias');
-    tierlist($('#tl', el), D.anomalias, { groups: ['General', 'Monarca', 'Dios'], tiers: ['S', 'A', 'B', 'C', 'D'], group: a => a.clase, name: 'nombre', value: a => a.dificultad, label: a => `<span title="Vida">♥ ${fmtK(a.vida)}</span> · <span title="Daño medio por golpe">⚔ ${fmt(Math.round(a.dano_real))}</span>`, icon: a => face(a), detail: anDetail });
+    tierlist($('#tl', el), D.anomalias, { groups: ['General', 'Monarca', 'Dios'], tiers: ['S', 'A', 'B', 'C', 'D'], group: a => a.clase, name: 'nombre', value: a => a.dificultad, label: a => `<span title="Vida">♥ ${fmtK(a.vida)}</span> · <span title="Daño medio por golpe">⚔ ${fmt(Math.round(a.dano_real))}</span>`, icon: a => face(a), detail: anDetail, tip: 'n' });
     table($('#tb', el), [{ k: 'nombre', l: 'Anomalía', render: (r, re) => `<span class="row">${face(r)}<b>${hl(r.nombre, re)}</b></span>` }, { k: 'clase', l: 'Clase' }, { k: 'tier', l: 'Tier', t: 'tier' }, { k: 'vida', l: 'Vida', t: 'bar' }, { k: 'dano', l: 'Daño ×', t: 'num' }, { k: 'dano_base', l: 'Daño medio ×1', t: 'num' }, { k: 'dano_real', l: 'Daño medio real', t: 'bar' }, { k: 'dificultad', l: 'Puntuación', t: 'num' }, { k: 'mobcoins', l: 'MobCoins', t: 'num' }, { k: 'exp', l: 'EXP', t: 'num' }, { k: 'botin', l: 'Objetos', t: 'num' }, { k: 'bioma', l: 'Bioma' }], D.anomalias, { filters: ['clase', 'tier'], sort: 'dificultad', onRow: anDetail, name: 'anomalias' });
   },
   cajas(el) {
@@ -494,38 +480,27 @@ function chartPlaytime(box) {
   svg.addEventListener('pointermove', move); svg.addEventListener('pointerdown', move);
 }
 
-// ---------- hero: campo de píxeles + parallax
-function heroFx(hero) {
-  const cv = $('canvas', hero), ctx = cv.getContext('2d'); let w = 0, h = 0, cols = 0, rows = 0, S = 26, tx = -999, ty = -999, mx = -999, my = -999, t = 0, raf = 0, vis = false, seeds;
-  function size() {
-    const dpr = Math.min(devicePixelRatio || 1, 2), r = hero.getBoundingClientRect(); w = r.width; h = r.height;
-    cv.width = w * dpr; cv.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); cols = Math.ceil(w / S) + 1; rows = Math.ceil(h / S) + 1;
-    seeds = new Float32Array(cols * rows).map(() => Math.random()); if (RM) frame();
-  }
-  function frame() {
-    t += .016; mx += (tx - mx) * .12; my += (ty - my) * .12; ctx.clearRect(0, 0, w, h);
-    for (let yy = 0; yy < rows; yy++) for (let xx = 0; xx < cols; xx++) {
-      const px = xx * S, py = yy * S, sd = seeds[yy * cols + xx];
-      const dx = px - mx, dy = py - my, dd = Math.sqrt(dx * dx + dy * dy), m = Math.max(0, 1 - dd / 240);
-      const wave = (Math.sin(xx * .32 + t * 1.1) + Math.sin(yy * .41 - t * .8) + Math.sin((xx + yy) * .16 + t * .5)) / 3;
-      const fadeY = Math.min(1, py / (h * .25)) * Math.min(1, (h - py) / (h * .45));
-      let a = (.05 + .11 * (wave + 1) / 2) * fadeY + m * m * .8, s = 1.6 + m * 7 + (wave + 1) * .4;
-      if (sd > .992) { const pulse = (Math.sin(t * 2 + sd * 100) + 1) / 2; ctx.fillStyle = `rgba(255,201,74,${(.15 + pulse * .6) * fadeY})`; s += pulse * 2; }
-      else ctx.fillStyle = `rgba(${m > .3 ? '95,200,255' : '0,178,255'},${a.toFixed(3)})`;
-      ctx.fillRect(px - s / 2, py - s / 2, s, s);
-    }
-    if (!RM && vis && !document.hidden) raf = requestAnimationFrame(frame);
-  }
-  const start = () => { cancelAnimationFrame(raf); if (!RM) raf = requestAnimationFrame(frame); };
-  new IntersectionObserver(es => { vis = es[0].isIntersecting; vis ? start() : cancelAnimationFrame(raf); }).observe(hero);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && vis) start(); });
-  new ResizeObserver(size).observe(hero);
-  hero.addEventListener('pointermove', e => {
-    const r = hero.getBoundingClientRect(); tx = e.clientX - r.left; ty = e.clientY - r.top;
-    hero.querySelectorAll('.float').forEach(f => { f.style.setProperty('--px', ((e.clientX - r.left) / r.width - .5).toFixed(3)); f.style.setProperty('--py', ((e.clientY - r.top) / r.height - .5).toFixed(3)); });
-  }, { passive: true });
-  hero.addEventListener('pointerleave', () => { tx = ty = -999; });
-}
+// ---------- tooltip de Minecraft
+const mctip = document.createElement('div'); mctip.className = 'mctip'; mctip.setAttribute('aria-hidden', 'true'); document.body.appendChild(mctip);
+const BYID = { a: new Map(D.armaduras.map(x => [String(x.id), x])), w: new Map(D.armas.map(x => [String(x.id), x])), n: new Map(D.anomalias.map(x => [String(x.id), x])) };
+const r = (k, v) => `<span class="r"><span>${k}</span><b>${v}</b></span>`;
+const TIPF = {
+  a: s => `<span class="t" style="color:${TC[s.tier]}">${esc(s.nombre)}</span><span class="sub">${esc(s.origen)}</span>${r('Poder', fmt(s.poder))}${r('Armadura', '+' + fmt(s.armadura))}${r('Dureza', '+' + fmt(s.dureza))}${r('Vida extra', '+' + fmt(s.vida))}<span class="l">Tier ${s.tier} · clic para ver la ficha</span>`,
+  w: a => `<span class="t" style="color:${TC[a.tier]}">${esc(a.nombre)}</span><span class="sub">${esc(a.clase)} · ${esc(a.origen)}</span>${r('Daño', fmt(a.dano))}${r('Crítico', a.critico + ' %')}${r('Daño crítico', fmt(a.max))}${r('Poder', fmt(a.poder))}<span class="l">Tier ${a.tier} · clic para ver la ficha</span>`,
+  n: a => `<span class="t" style="color:${TC[a.tier]}">${esc(a.nombre)}</span><span class="sub">${esc(a.clase)} · ${esc(a.bioma || '')}</span>${r('Vida', fmt(a.vida))}${r('Daño medio', fmt(Math.round(a.dano_real)))}${r('Habilidades', fmt(a.habilidades))}${r('MobCoins', fmt(a.mobcoins))}<span class="l">Tier ${a.tier} · clic para ver la ficha</span>`
+};
+let tipEl = null;
+const placeTip = e => { const w = mctip.offsetWidth, h = mctip.offsetHeight; let x = e.clientX + 18, y = e.clientY - 12; if (x + w > innerWidth - 8) x = e.clientX - w - 18; if (y + h > innerHeight - 8) y = innerHeight - h - 8; mctip.style.transform = `translate(${x}px,${Math.max(8, y)}px)`; };
+document.addEventListener('pointerover', e => {
+  if (e.pointerType !== 'mouse') return; const t = e.target.closest && e.target.closest('[data-tip]');
+  if (t === tipEl) return; tipEl = t; if (!t) { mctip.classList.remove('on'); return; }
+  const [k, ...rest] = t.dataset.tip.split(':'), it = BYID[k] && BYID[k].get(rest.join(':'));
+  if (!it) { mctip.classList.remove('on'); return; }
+  mctip.innerHTML = TIPF[k](it); mctip.classList.add('on'); placeTip(e);
+});
+document.addEventListener('pointermove', e => { if (tipEl) placeTip(e); }, { passive: true });
+document.addEventListener('pointerdown', () => { mctip.classList.remove('on'); tipEl = null; });
+addEventListener('scroll', () => { if (tipEl) { mctip.classList.remove('on'); tipEl = null; } }, { passive: true });
 
 // ---------- router
 const built = {}; let current = null;
@@ -633,9 +608,6 @@ addEventListener('scroll', () => {
 totop.addEventListener('click', () => scrollTo({ top: 0, behavior: RM ? 'auto' : 'smooth' }));
 
 // ---------- arranque
-const intro = $('#intro');
-let seen = false; try { seen = sessionStorage.getItem('dm-intro') === '1'; sessionStorage.setItem('dm-intro', '1'); } catch (e) { /* sin almacenamiento */ }
 route();
-const ready = () => { document.body.classList.add('ready'); intro.classList.add('out'); setTimeout(() => intro.remove(), 900); };
-if (seen || RM || (location.hash && location.hash !== '#inicio')) { intro.style.transition = 'none'; ready(); } else setTimeout(ready, 1250);
+requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.add('ready')));
 })();
