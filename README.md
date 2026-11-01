@@ -1,4 +1,4 @@
-# CÓDICE de Ederus
+# EDERUSDEX
 
 Guía del Survival de Ederus: tier lists de armaduras, armas y anomalías, cajas y premios, encantamientos, jefes de mazmorra, mascotas, tags, economía, progresión y rangos.
 

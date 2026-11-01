@@ -165,13 +165,13 @@ const nav = $('#nav'), main = $('#main');
 
 function head(id, title, p, stats = []) {
   const v = VI[id];
-  return `<header class="vh"><nav class="crumbs" aria-label="Migas"><a href="#inicio">Códice</a><span>›</span><span>${esc(v.g)}</span><span>›</span><b>${esc(v.t)}</b><em class="upd">Actualizado 31/10/2026</em></nav><h1>${split(title)}</h1>${p ? `<p>${p}</p>` : ''}${stats.length ? `<div class="stats">${stats.map(([k, b]) => `<span class="chip"><i></i>${k} <b>${b}</b></span>`).join('')}</div>` : ''}</header>`;
+  return `<header class="vh"><nav class="crumbs" aria-label="Migas"><a href="#inicio">EDERUSDEX</a><span>›</span><span>${esc(v.g)}</span><span>›</span><b>${esc(v.t)}</b><em class="upd">Actualizado 31/10/2026</em></nav><h1>${split(title)}</h1>${p ? `<p>${p}</p>` : ''}${stats.length ? `<div class="stats">${stats.map(([k, b]) => `<span class="chip"><i></i>${k} <b>${b}</b></span>`).join('')}</div>` : ''}</header>`;
 }
 function sect(title, inner, n, sub) {
   return `<section class="sect"><div class="sect__h rv"><h2>${n ? `<small>${n}</small>` : ''}${title}</h2>${sub ? `<p>${sub}</p>` : ''}</div>${inner}</section>`;
 }
 function fichas(v) { return (FICHAS[v] || []).length ? sect('Fichas completas', `<div class="plist">${FICHAS[v].join('')}</div>`) : ''; }
-const footer = () => `<footer class="foot"><div class="foot__big" aria-hidden="true">CÓDICE</div><div class="foot__row"><span>EDERUS · Guía del Survival. Datos sacados de la configuración real del servidor.</span><span><a href="#inicio">Inicio</a> · <a href="guia.html">Guía pública</a> · <a href="#" data-open-search>Buscar</a></span></div></footer>`;
+const footer = () => `<footer class="foot"><div class="foot__big" aria-hidden="true">EDERUSDEX</div><div class="foot__row"><span>EDERUS · Guía del Survival. Datos sacados de la configuración real del servidor.</span><span><a href="#inicio">Inicio</a> · <a href="guia.html">Guía pública</a> · <a href="#" data-open-search>Buscar</a></span></div></footer>`;
 
 // ---------- tabla
 const PAGE = 80;
@@ -228,7 +228,7 @@ function table(el, cols, rows, opt = {}) {
     const cell = v => { v = v == null ? '' : String(v); return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
     const csv = '﻿' + [cols.map(c => cell(c.l)).join(';'), ...cur.map(r => cols.map(c => cell(typeof r[c.k] === 'number' ? String(r[c.k]).replace('.', ',') : r[c.k])).join(';'))].join('\n');
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-    a.download = 'codice-' + (opt.name || 'tabla') + '.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); toast(`CSV con ${NF.format(cur.length)} filas descargado`);
+    a.download = 'ederusdex-' + (opt.name || 'tabla') + '.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); toast(`CSV con ${NF.format(cur.length)} filas descargado`);
   });
   if (opt.onRow) {
     const pick = e => { const tr = e.target.closest('tr.clk'); if (!tr) return; const i = [...tb.children].indexOf(tr); if (cur[i]) opt.onRow(cur[i]); };
@@ -416,7 +416,7 @@ const B = {
   inicio(el) {
     const topA = [...D.armaduras].sort((a, b) => b.poder - a.poder), topW = [...D.armas].sort((a, b) => b.poder - a.poder), topN = [...D.anomalias].sort((a, b) => b.dificultad - a.dificultad);
         const total = D.armaduras.length + D.armas.length + D.anomalias.length + D.premios.length + D.encantamientos.length + D.mascotas.length + D.tags.length + D.jefes.length;
-    const word = [...'CÓDICE'].map((ch, i) => `<span style="--i:${i}"${i > 2 ? ' class="az"' : ''}>${ch}</span>`).join('');
+    const word = [...'EDERUSDEX'].map((ch, i) => `<span style="--i:${i}"${i > 5 ? ' class="az"' : ''}>${ch}</span>`).join('');
     const slot = (kind, it, art, v) => `<button type="button" class="slot${it.tier === 'EX' ? ' glint' : ''}" data-tip="${kind}:${esc(it.id)}" data-go="${v}/${esc(it.id)}" aria-label="${esc(it.nombre)}, tier ${it.tier}">${art}<span class="q">${it.tier}</span></button>`;
     const inv = topA.slice(0, 9).map(s => slot('a', s, ico(s.icon, s.dye), 'tl-armaduras')).join('') + topW.slice(0, 9).map(a => slot('w', a, ico(a.icon), 'tl-armas')).join('') + topN.slice(0, 9).map(a => slot('n', a, face(a), 'tl-anomalias')).join('');
     const mq = [...topA.slice(0, 10).map(s => ({ v: 'tl-armaduras', it: s, i: ico(s.icon, s.dye) })), ...topW.slice(0, 8).map(a => ({ v: 'tl-armas', it: a, i: ico(a.icon) })), ...topN.slice(0, 6).map(a => ({ v: 'tl-anomalias', it: a, i: face(a), val: '♥ ' + fmtK(a.vida) }))];
@@ -427,7 +427,7 @@ const B = {
       return g + `<a href="#${v.id}"><span class="no">${pad(n)}</span><span class="slot">${ico(v.ic)}</span><h3>${v.t}</h3><p>${v.d}</p><span class="ct">${v.n ? NF.format(v.n()) + ' entradas' : 'Sistema'}</span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>`; }).join('');
     el.innerHTML = `<section class="mast">
       <div class="mast__rule"><span class="live"><b>Datos del servidor</b> · 31/10/2026</span><span>Ederus · Survival</span><span>${NF.format(total)} fichas</span><span>Edición pública</span></div>
-      <div class="mast__word"><h1 aria-label="Códice de Ederus">${word}</h1></div>
+      <div class="mast__word"><h1 aria-label="EDERUSDEX">${word}</h1></div>
       <div class="mast__grid">
         <div class="mast__lead"><p>La guía del Survival de Ederus, medida al detalle: qué equipo pega más, qué jefe aguanta más y cuánto vale cada cosa.</p>
           ${PUB ? '<small>Equipo, jefes, cajas, economía y rangos del Survival a 31/10/2026, sacados de la configuración real. Toca cualquier objeto para ver su ficha.</small>' : ''}
@@ -607,7 +607,7 @@ function show(id) {
     reveal(v);
     $$('a', nav).forEach(a => { const on = a.dataset.v === id; a.classList.toggle('on', on); on ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'); });
     window.scrollTo({ top: 0, behavior: 'instant' });
-    document.title = id === 'inicio' ? 'CÓDICE | EDERUS' : VI[id].t + ' · CÓDICE | EDERUS';
+    document.title = id === 'inicio' ? 'EDERUSDEX | EDERUS' : VI[id].t + ' · EDERUSDEX | EDERUS';
   };
   current = id;
   if (!first && document.startViewTransition && !RM) document.startViewTransition(run); else run();
