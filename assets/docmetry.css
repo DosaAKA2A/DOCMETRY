@@ -184,6 +184,17 @@ main{min-width:0;padding:0 var(--gut)}
 .kpi .s{font-size:13px;font-weight:600}
 .kpi .ic{position:absolute;right:12px;top:14px;width:30px;height:30px;filter:drop-shadow(2px 2px 0 rgba(0,0,0,.35))}
 
+.answers{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:10px}
+.ans{display:grid;grid-template-columns:auto minmax(0,1fr) 18px;align-items:center;gap:14px;padding:12px 14px;border:1px solid var(--stone);border-radius:var(--r);background:var(--obs-2);text-decoration:none;color:var(--ink);transition:border-color .1s,background .1s}
+.ans:hover,.ans:focus-visible{border-color:var(--az);background:var(--obs-3);outline:none}
+.ans .slot{width:48px;height:48px}.ans .slot .ic,.ans .slot .face{width:30px;height:30px}
+.ans__t{display:grid;gap:2px;min-width:0}
+.ans__t small{font:400 9.5px/1.4 var(--f-px);color:var(--muted);text-transform:uppercase}
+.ans__t b{font:800 17px/1.15 var(--f-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ans__t em{font-style:normal;font-size:13px;color:var(--gold)}
+.ans svg{width:18px;height:18px;color:var(--ash)}
+.ans:hover svg{color:var(--az)}
+
 /* marcos de objeto (podio) */
 .podium{border-radius:var(--r);overflow:hidden;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--stone)}
 .champ{--c:var(--az);display:grid;grid-template-rows:auto 1fr auto;gap:22px;padding:24px;border:0;border-right:1px solid var(--stone);background:var(--obs);text-align:left;cursor:pointer;min-height:360px;transition:background .1s var(--step)}

@@ -343,14 +343,31 @@ function openCmp() {
 const closeCmp = () => cmpEl.classList.remove('on');
 cmpEl.addEventListener('click', e => { if (e.target === cmpEl) closeCmp(); });
 
+// respuestas rápidas de la portada (todo calculado de los datos)
+function answers() {
+  const top = (arr, k) => arr.reduce((m, x) => (+x[k] || 0) > (+m[k] || 0) ? x : m, arr[0]);
+  const bestOf = o => { const l = D.armaduras.filter(s => s.origen === o); return l.length ? top(l, 'poder') : null; };
+  const cajaD = top(D.cajas, 'ev_dinero'), cajaM = top(D.cajas, 'ev_mc'), anMC = top(D.anomalias, 'mobcoins'), mob = top(D.mc_drops, 'media');
+  const rara = D.premios.reduce((m, x) => x.pct < m.pct ? x : m, D.premios[0]);
+  const vip = bestOf('VIP'), caj = bestOf('Cajas y eventos'), cal = bestOf('Calamity');
+  const A = [
+    ['¿Qué caja da más dinero por llave?', cajaD.caja, fmt(cajaD.ev_dinero) + ' de media', ico('tripwire_hook'), '#cajas'],
+    ['¿Y más MobCoins por llave?', cajaM.caja, fmt(cajaM.ev_mc) + ' MC de media', ico('sunflower'), '#cajas'],
+    ['¿Qué anomalía da más MobCoins?', anMC.nombre, fmt(anMC.mobcoins) + ' MC por participante', face(anMC), '#tl-anomalias/' + anMC.id],
+    ['¿Qué mob suelta más MobCoins?', mob.mob, fmt(mob.media) + ' MC por muerte', ico('gold_nugget'), '#economia'],
+    vip && ['¿Mejor set de origen VIP?', vip.nombre, fmt(vip.poder) + ' de poder', ico(vip.icon, vip.dye), '#tl-armaduras/' + vip.id],
+    caj && ['¿Mejor set de cajas y eventos?', caj.nombre, fmt(caj.poder) + ' de poder', ico(caj.icon, caj.dye), '#tl-armaduras/' + caj.id],
+    cal && ['¿Mejor set de Calamity?', cal.nombre, fmt(cal.poder) + ' de poder', ico(cal.icon, cal.dye), '#tl-armaduras/' + cal.id],
+    ['¿El premio más difícil de sacar?', rara.premio, `${fmt(rara.pct)} % en ${rara.caja}`, ico('tripwire_hook'), '#cajas--' + encodeURIComponent(rara.premio)],
+  ].filter(Boolean);
+  return A.map(([q, a, v, i, h]) => `<a class="ans" href="${h}"><span class="slot">${i}</span><span class="ans__t"><small>${esc(q)}</small><b>${esc(a)}</b><em>${esc(v)}</em></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>`).join('');
+}
 // ---------- constructores de vistas
 const tierStats = (list, tiers) => tiers.map(t => [`Tier ${t}`, list.filter(x => x.tier === t).length]).filter(x => x[1]);
 const B = {
   inicio(el) {
     const topA = [...D.armaduras].sort((a, b) => b.poder - a.poder), topW = [...D.armas].sort((a, b) => b.poder - a.poder), topN = [...D.anomalias].sort((a, b) => b.dificultad - a.dificultad);
-    const vidas = D.anomalias.map(a => a.vida), tiersE = new Set(D.encantamientos.map(e => e.tier)).size;
-    const total = D.armaduras.length + D.armas.length + D.anomalias.length + D.premios.length + D.encantamientos.length + D.mascotas.length + D.tags.length + D.jefes.length;
-    const k = (t, v, s, ic) => `<div class="kpi"><div class="k">${t}</div><div class="v" data-count="${v}">0</div><div class="s">${s}</div>${ico(ic)}</div>`;
+        const total = D.armaduras.length + D.armas.length + D.anomalias.length + D.premios.length + D.encantamientos.length + D.mascotas.length + D.tags.length + D.jefes.length;
     const word = [...'DOCMETRY'].map((ch, i) => `<span style="--i:${i}"${i > 2 ? ' class="az"' : ''}>${ch}</span>`).join('');
     const slot = (kind, it, art, v) => `<button type="button" class="slot${it.tier === 'EX' ? ' glint' : ''}" data-tip="${kind}:${esc(it.id)}" data-go="${v}/${esc(it.id)}" aria-label="${esc(it.nombre)}, tier ${it.tier}">${art}<span class="q">${it.tier}</span></button>`;
     const inv = topA.slice(0, 9).map(s => slot('a', s, ico(s.icon, s.dye), 'tl-armaduras')).join('') + topW.slice(0, 9).map(a => slot('w', a, ico(a.icon), 'tl-armas')).join('') + topN.slice(0, 9).map(a => slot('n', a, face(a), 'tl-anomalias')).join('');
@@ -371,7 +388,7 @@ const B = {
           <div class="inv">${inv}</div><div class="inv-note">Pasa el ratón por una casilla para ver sus estadísticas. Haz clic para abrir la ficha.</div></div>
       </div></section>
     <div class="marquee" aria-label="Lo más fuerte del Survival"><div class="marquee__track">${mqHtml}${mqHtml.replace(/<button /g, '<button tabindex="-1" aria-hidden="true" ')}</div></div>
-    <div class="band" id="inicio-kpis"><div class="kpis">${k('Sets de armadura', D.armaduras.length, `${esc(topA[0].nombre)} · ${fmt(topA[0].poder)} es el top`, 'netherite_chestplate')}${k('Armas', D.armas.length, `poder de ${fmt(topW[topW.length - 1].poder)} a ${fmt(topW[0].poder)}`, 'netherite_sword')}${k('Anomalías', D.anomalias.length, `de ${fmt(Math.min(...vidas))} a ${fmt(Math.max(...vidas))} de vida`, 'nether_star')}${k('Premios en cajas', D.premios.length, `${D.cajas.length} cajas`, 'tripwire_hook')}${k('Encantamientos', D.encantamientos.length, `${tiersE} tiers`, 'enchanted_book')}${PUB ? k('Mascotas', D.mascotas.length, 'de CombatPets', 'wolf_spawn_egg') : ''}</div></div>
+    ${sect('Respuestas rápidas', `<div class="answers rv">${answers()}</div>`, '§0', 'Lo que más se pregunta, sacado de los datos. Toca para ir.')}
     ${sect('El número uno', `<div class="podium rv">${champ('Armadura', topA[0], fmt(topA[0].poder), 'de poder', ico(topA[0].icon, topA[0].dye, 1), 'tl-armaduras', 'a')}${champ('Arma', topW[0], fmt(topW[0].poder), 'de poder', ico(topW[0].icon, null, 1), 'tl-armas', 'w')}${champ('Anomalía', topN[0], fmtK(topN[0].vida), 'de vida', face(topN[0]), 'tl-anomalias', 'n')}</div>`, '§1', 'Lo primero de cada tier list. Toca para abrir su ficha.')}
     ${sect('Índice', `<nav class="toc rv" aria-label="Índice">${toc}</nav>`, '§2', 'Tier lists, base de datos y sistemas del servidor.')}
     ${sect('Cómo se usa', `<div class="tips rv">${[['Toca cualquier objeto', 'Sets, armas y anomalías abren su ficha con estadísticas, piezas y habilidades.'], [`Busca con ${MAC ? '⌘' : 'Ctrl'} K`, 'Un buscador para todo: premios, encantamientos, mobs, tags y tiendas.'], ['Compara hasta 4', 'Añade sets o armas al comparador desde su ficha y míralos lado a lado.'], ['Comparte el enlace', 'Cada ficha tiene su propia dirección. Cópiala y pásala por Discord.']].map(([t, s], i) => `<div class="tip"><span class="tip__n">${pad(i + 1)}</span><b>${t}</b><span>${s}</span></div>`).join('')}</div>`, '§3')}`;
