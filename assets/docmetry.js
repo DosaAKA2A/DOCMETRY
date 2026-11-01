@@ -1,0 +1,641 @@
+/* ==========================================================================
+   DOCMETRY · EDERUS — interfaz
+   Lee los datos de window.D (assets/data.js) y monta todas las vistas.
+   ========================================================================== */
+(() => {
+'use strict';
+const D = window.D, FICHAS = window.FICHAS || {};
+const PUB = !!D.publico;
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+
+// ---------- formato
+const CDN = 'https://cdn.jsdelivr.net/gh/PrismarineJS/minecraft-assets@master/data/';
+const NF = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 });
+const fmt = v => v == null || v === '' ? '—' : (typeof v === 'number' ? NF.format(v) : v);
+const fmtK = v => v == null ? '—' : v >= 1e6 ? (Math.round(v / 1e5) / 10).toString().replace('.', ',') + ' M' : v >= 1e3 ? Math.round(v / 1e3) + ' k' : fmt(v);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const norm = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const AC = { a: 'aáàäâ', e: 'eéèëê', i: 'iíìïî', o: 'oóòöô', u: 'uúùüû', n: 'nñ', c: 'cç' };
+const mkRe = q => q ? new RegExp('(' + [...q].map(ch => AC[ch] ? `[${AC[ch]}]` : ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('') + ')', 'i') : null;
+const hl = (raw, re) => { raw = String(raw ?? ''); if (!re) return esc(raw); return raw.split(re).map((p, i) => i % 2 ? `<mark>${esc(p)}</mark>` : esc(p)).join(''); };
+const TC = { EX: '#c58cff', S: '#ff6b6b', A: '#ffb454', B: '#4ade80', C: '#5FC8FF', D: '#8fa6bd' };
+const TORD = { EX: 6, S: 5, A: 4, B: 3, C: 2, D: 1 };
+const max = (arr, k) => Math.max(...arr.map(r => +r[k] || 0), 1);
+
+const SVG = {
+  arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  ne: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 17 17 7M9 7h8v8"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/></svg>',
+  cmp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  dl: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
+  reset: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
+  sortar: '<span class="ar">↓</span>'
+};
+
+// ---------- iconos de Minecraft
+const ALIAS = { crossbow: 'crossbow_standby', sunflower: 'sunflower_front', illusioner_spawn_egg: 'evoker_spawn_egg' };
+function ico(id, dye, lg) {
+  if (!id) return '<span class="ic' + (lg ? ' lg' : '') + '"></span>';
+  id = String(id).toLowerCase(); id = ALIAS[id] || id;
+  if (dye && id.startsWith('leather_')) {
+    return `<span class="ic${lg ? ' lg' : ''}"><span class="tint" style="background:${dye};-webkit-mask-image:url(${CDN}1.21.4/items/${id}.png);mask-image:url(${CDN}1.21.4/items/${id}.png)"></span><img alt="" loading="lazy" src="${CDN}1.21.4/items/${id}_overlay.png" onerror="this.remove()"></span>`;
+  }
+  return `<span class="ic${lg ? ' lg' : ''}"><img alt="" loading="lazy" data-id="${esc(id)}" data-i="0"></span>`;
+}
+function face(a) {
+  if (a.face) return `<span class="face"><img alt="" src="${a.face}"></span>`;
+  if (a.skin) { const [p, w, h, x, y, fw] = a.skin; const s = 36 / fw; return `<span class="face" style="background-image:url(${CDN}1.21.4/entity/${p}.png);background-size:${w * s}px ${h * s}px;background-position:-${x * s}px -${y * s}px"></span>`; }
+  return ico(a.icon);
+}
+const mobFace = j => j.skin ? `<span class="face"><img alt="" loading="lazy" src="${j.skin}"></span>` : ico(j.icon);
+function hydrate(root) {
+  root.querySelectorAll('img[data-id]').forEach(img => {
+    if (img.src) return; const id = img.dataset.id;
+    const L = [CDN + '1.21.4/items/' + id + '.png', CDN + '1.21.4/blocks/' + id + '.png', CDN + '1.21.11/items/' + id + '.png', CDN + '1.21.11/blocks/' + id + '.png'];
+    const next = () => { const i = +img.dataset.i; if (i < L.length) { img.dataset.i = i + 1; img.src = L[i]; } else { img.onerror = null; img.style.visibility = 'hidden'; } };
+    img.onload = () => img.classList.add('ok'); img.onerror = next; next();
+  });
+}
+
+// ---------- utilidades de UI
+const toastEl = $('#toast'); let toastT;
+function toast(msg) { toastEl.textContent = msg; toastEl.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('on'), 2200); }
+const split = t => t.split(' ').map((w, i) => `<span class="split-word"><span style="--i:${i}">${w}</span></span>`).join(' ');
+let rvSeq = 0;
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting) return; const t = e.target; t.classList.add('is-in'); io.unobserve(t);
+  $$('[data-count]', t).concat(t.matches('[data-count]') ? [t] : []).forEach(countUp);
+}), { rootMargin: '0px 0px -6% 0px', threshold: 0 });
+function reveal(root) {
+  rvSeq = 0;
+  $$('.rv,.tl,.chart,[data-count]', root).forEach(el => { if (!el.classList.contains('is-in')) io.observe(el); });
+}
+function countUp(el) {
+  if (el.dataset.done) return; el.dataset.done = 1;
+  const to = +el.dataset.count; if (RM || !to) { el.textContent = NF.format(to); return; }
+  const t0 = performance.now(), dur = 1600;
+  const step = now => { const p = Math.min(1, (now - t0) / dur), e = p === 1 ? 1 : 1 - Math.pow(2, -10 * p); el.textContent = NF.format(Math.round(to * e)); if (p < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+// foco que sigue al ratón en tarjetas .spot
+document.addEventListener('pointermove', e => {
+  const c = e.target.closest && e.target.closest('.spot'); if (!c) return;
+  const r = c.getBoundingClientRect(); c.style.setProperty('--mx', (e.clientX - r.left) + 'px'); c.style.setProperty('--my', (e.clientY - r.top) + 'px');
+}, { passive: true });
+// botones magnéticos
+if (!RM && matchMedia('(pointer:fine)').matches) {
+  document.addEventListener('pointermove', e => {
+    const b = e.target.closest && e.target.closest('[data-mag]');
+    $$('[data-mag].mag-on').forEach(o => { if (o !== b) { o.style.transform = ''; o.classList.remove('mag-on'); } });
+    if (!b) return; const r = b.getBoundingClientRect();
+    b.classList.add('mag-on'); b.style.transform = `translate(${(e.clientX - r.left - r.width / 2) * .18}px,${(e.clientY - r.top - r.height / 2) * .28}px)`;
+  }, { passive: true });
+}
+
+// ---------- vistas
+const VIEWS = [
+  { g: 'Empieza aquí', id: 'inicio', t: 'Inicio', ic: 'knowledge_book' },
+  { g: 'Tier lists', id: 'tl-armaduras', t: 'Armaduras', ic: 'netherite_chestplate', n: () => D.armaduras.length, d: 'El poder de cada set con la fórmula de la guía, de EX a D.', w: 'w6' },
+  { g: 'Tier lists', id: 'tl-armas', t: 'Armas', ic: 'netherite_sword', n: () => D.armas.length, d: 'Golpe medio con críticos, convertido en poder.', w: 'w3' },
+  { g: 'Tier lists', id: 'tl-anomalias', t: 'Anomalías', ic: 'nether_star', n: () => D.anomalias.length, d: 'Vida × daño medio de cada anomalía.', w: 'w3' },
+  { g: 'Base de datos', id: 'cajas', t: 'Cajas y premios', ic: 'tripwire_hook', n: () => D.premios.length, d: 'Cada caja, sus premios y la probabilidad de cada uno.', w: 'w4' },
+  { g: 'Base de datos', id: 'encantamientos', t: 'Encantamientos', ic: 'enchanted_book', n: () => D.encantamientos.length, d: 'Los de AdvancedEnchantments con su efecto al nivel máximo.', w: 'w4' },
+  { g: 'Base de datos', id: 'mazmorras', t: 'Jefes de mazmorra', ic: 'wither_skeleton_spawn_egg', n: () => D.jefes.length, d: 'Jefes y tropa de MythicMobs: vida, daño y armadura.', w: 'w4' },
+  { g: 'Base de datos', id: 'mascotas', t: 'Mascotas', ic: 'wolf_spawn_egg', n: () => D.mascotas.length, d: 'Mascotas de CombatPets y de dónde sale cada una.', w: 'w3' },
+  { g: 'Base de datos', id: 'tags', t: 'Tags', ic: 'name_tag', n: () => D.tags.length, d: 'Todos los tags y cómo se consiguen.', w: 'w3' },
+  { g: 'Sistemas', id: 'economia', t: 'Economía y MobCoins', ic: 'gold_ingot', d: 'Dónde nace el dinero, dónde muere y cuánto vale cada cosa en MobCoins.', w: 'w6' },
+  { g: 'Sistemas', id: 'progresion', t: 'Rankup, playtime y misiones', ic: 'experience_bottle', d: 'Lo que se gana subiendo de rango, jugando horas y haciendo misiones.', w: 'w4' },
+  { g: 'Sistemas', id: 'rangos', t: 'Rangos VIP', ic: 'golden_helmet', d: 'Lo que da cada rango, lado a lado.', w: 'w4' },
+  { g: 'Sistemas', id: 'combate', t: 'Dificultad y hordas', ic: 'iron_sword', d: 'Cuánto pega cada cosa con cada armadura.', w: 'w4' },
+  { g: 'Sistemas', id: 'calamity', t: 'Calamity y pesca', ic: 'fishing_rod', d: 'El modo hardcore: amenazas, Esencias, Altar, Forja y pesca.', w: 'w6' },
+  { g: 'Sistemas', id: 'mundo', t: 'Mundo y servicios', ic: 'diamond_pickaxe', d: 'Minions, protecciones, minas y otros servicios.', w: 'w6' },
+];
+const VI = Object.fromEntries(VIEWS.map((v, i) => [v.id, { ...v, i }]));
+const pad = n => String(n).padStart(2, '0');
+
+const nav = $('#nav'), main = $('#main');
+{
+  let lastG = '';
+  nav.innerHTML = VIEWS.map(v => { const h = v.g !== lastG ? `<div class="rail__grp">${v.g}</div>` : ''; lastG = v.g; return h + `<a href="#${v.id}" data-v="${v.id}">${ico(v.ic)}<span>${v.t}</span>${v.n ? `<span class="n">${v.n()}</span>` : ''}</a>`; }).join('') +
+    `<div class="rail__foot"><b>Atajos</b><br><kbd>${MAC ? '⌘' : 'Ctrl'}</kbd> <kbd>K</kbd> o <kbd>/</kbd> para buscar · <kbd>Esc</kbd> para cerrar fichas.</div>`;
+  hydrate(nav);
+}
+
+function head(id, title, p, stats = []) {
+  const v = VI[id];
+  return `<header class="vh"><span class="eyebrow">${esc(v.g)} <b>/ ${pad(v.i)}</b></span><h1>${split(title)}</h1>${p ? `<p>${p}</p>` : ''}${stats.length ? `<div class="stats">${stats.map(([k, b]) => `<span class="chip"><i></i>${k} <b>${b}</b></span>`).join('')}</div>` : ''}</header>`;
+}
+function sect(title, inner, n, sub) {
+  return `<section class="sect"><div class="sect__h rv"><h2>${n ? `<small>${n}</small>` : ''}${title}</h2>${sub ? `<p>${sub}</p>` : ''}</div>${inner}</section>`;
+}
+function fichas(v) { return (FICHAS[v] || []).length ? sect('Fichas completas', `<div class="plist">${FICHAS[v].join('')}</div>`) : ''; }
+const footer = () => `<footer class="foot"><div class="foot__big" aria-hidden="true">DOCMETRY</div><div class="foot__row"><span>EDERUS · Guía del Survival. Datos sacados de la configuración real del servidor.</span><span><a href="#inicio">Inicio</a> · <a href="guia.html">Guía pública</a> · <a href="#" data-open-search>Buscar</a></span></div></footer>`;
+
+// ---------- tabla
+const PAGE = 80;
+function table(el, cols, rows, opt = {}) {
+  let sortK = opt.sort || null, dir = opt.dir || -1, q = '', re = null, f = {}, limit = PAGE, cur = [];
+  const lab = k => (cols.find(c => c.k === k) || {}).l || k;
+  const filt = (opt.filters || []).map(k => {
+    const vals = [...new Set(rows.map(r => r[k]).filter(v => v != null && v !== ''))].sort((a, b) => typeof a === 'number' ? a - b : String(a).localeCompare(String(b), 'es'));
+    return `<span class="sel"><select data-f="${k}" aria-label="${esc(lab(k))}"><option value="">${esc(lab(k))}: todos</option>${vals.map(v => `<option>${esc(v)}</option>`).join('')}</select></span>`;
+  }).join('');
+  el.classList.add('tbl');
+  el.innerHTML = `<div class="bar"><label class="field">${SVG.search}<input type="search" placeholder="Filtrar ${NF.format(rows.length)} filas…" aria-label="Filtrar tabla"></label>${filt}<span class="cnt"></span><button type="button" class="icon-btn" data-csv title="Descargar lo filtrado en CSV">${SVG.dl}CSV</button></div>
+  <div class="tw"><table><thead><tr>${cols.map(c => `<th data-k="${c.k}" class="${c.t === 'num' || c.t === 'bar' ? 'num' : ''}" scope="col">${esc(c.l)}${SVG.sortar}</th>`).join('')}</tr></thead><tbody></tbody></table></div>`;
+  const tb = $('tbody', el), cnt = $('.cnt', el), tw = $('.tw', el);
+  const mx = {}; cols.filter(c => c.t === 'bar').forEach(c => mx[c.k] = max(rows, c.k));
+  const sv = (c, r) => c.sv ? c.sv(r) : c.t === 'tier' ? TORD[r[c.k]] || 0 : r[c.k];
+  function cell(c, r) {
+    const v = r[c.k];
+    if (c.render) return c.render(r, re);
+    if (c.t === 'bar') return `<div class="bcell"><i style="width:${Math.max(2, (+v || 0) / mx[c.k] * 100)}%"></i><span>${fmt(v)}${v != null && c.u ? c.u : ''}</span></div>`;
+    if (c.t === 'tier') return `<span class="pill tier-${esc(v)}">${esc(v)}</span>`;
+    if (c.t === 'num') return fmt(v) + (v != null && v !== '' && c.u ? c.u : '');
+    return hl(v, re);
+  }
+  const rowHtml = r => `<tr${opt.onRow ? ' class="clk" tabindex="0"' : ''}>${cols.map(c => `<td class="${c.t === 'num' || c.t === 'bar' ? 'num' : ''}">${cell(c, r)}</td>`).join('')}</tr>`;
+  const sentinelIO = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) more(); }, { root: tw, rootMargin: '300px' });
+  function more() {
+    const from = limit; limit += PAGE * 2;
+    const s = $('tr.more', tb); if (s) { sentinelIO.unobserve(s); s.remove(); }
+    tb.insertAdjacentHTML('beforeend', cur.slice(from, limit).map(rowHtml).join(''));
+    tail(); hydrate(tb);
+  }
+  function tail() {
+    if (cur.length > limit) { tb.insertAdjacentHTML('beforeend', `<tr class="more"><td colspan="${cols.length}">Mostrando ${NF.format(limit)} de ${NF.format(cur.length)} · baja para ver más</td></tr>`); sentinelIO.observe($('tr.more', tb)); }
+  }
+  function draw() {
+    let rs = rows.filter(r => (!q || norm(Object.values(r).filter(x => typeof x !== 'object').join(' ')).includes(q)) && Object.entries(f).every(([k, v]) => !v || String(r[k]) === v));
+    if (sortK) {
+      const c = cols.find(c => c.k === sortK);
+      rs = [...rs].sort((a, b) => { const x = sv(c, a), y = sv(c, b); if (typeof x === 'number' || typeof y === 'number') return ((+x || 0) - (+y || 0)) * dir; return String(x ?? '').localeCompare(String(y ?? ''), 'es') * dir; });
+    }
+    cur = rs; limit = PAGE; sentinelIO.disconnect();
+    tb.innerHTML = rs.length ? rs.slice(0, limit).map(rowHtml).join('') : `<tr class="empty"><td colspan="${cols.length}">Nada coincide con el filtro.</td></tr>`;
+    tail();
+    cnt.innerHTML = `<b>${NF.format(rs.length)}</b> de ${NF.format(rows.length)}`;
+    $$('th', el).forEach(th => th.removeAttribute('aria-sort'));
+    if (sortK) { const th = $(`th[data-k="${sortK}"]`, el); if (th) th.setAttribute('aria-sort', dir > 0 ? 'ascending' : 'descending'); }
+    hydrate(tb);
+  }
+  let deb; $('input', el).addEventListener('input', e => { clearTimeout(deb); deb = setTimeout(() => { q = norm(e.target.value.trim()); re = mkRe(q); draw(); }, 90); });
+  $$('select', el).forEach(s => s.addEventListener('change', () => { f[s.dataset.f] = s.value; s.classList.toggle('set', !!s.value); draw(); }));
+  $$('th', el).forEach(th => th.addEventListener('click', () => { const k = th.dataset.k; dir = sortK === k ? -dir : -1; sortK = k; draw(); }));
+  $('[data-csv]', el).addEventListener('click', () => {
+    const cell = v => { v = v == null ? '' : String(v); return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    const csv = '﻿' + [cols.map(c => cell(c.l)).join(';'), ...cur.map(r => cols.map(c => cell(typeof r[c.k] === 'number' ? String(r[c.k]).replace('.', ',') : r[c.k])).join(';'))].join('\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'docmetry-' + (opt.name || 'tabla') + '.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); toast(`CSV con ${NF.format(cur.length)} filas descargado`);
+  });
+  if (opt.onRow) {
+    const pick = e => { const tr = e.target.closest('tr.clk'); if (!tr) return; const i = [...tb.children].indexOf(tr); if (cur[i]) opt.onRow(cur[i]); };
+    tb.addEventListener('click', pick); tb.addEventListener('keydown', e => { if (e.key === 'Enter') pick(e); });
+  }
+  el.setFilter = t => { const i = $('input', el); i.value = t; q = norm(t); re = mkRe(q); draw(); };
+  draw(); return el;
+}
+
+// ---------- tier list
+function tierlist(el, items, o) {
+  const groups = o.groups, tiers = o.tiers; let q = '', off = new Set();
+  el.innerHTML = `<div class="bar"><label class="field">${SVG.search}<input type="search" placeholder="Buscar en la tier list…" aria-label="Buscar en la tier list"></label>${groups.map(g => `<button type="button" class="tg on" data-g="${esc(g)}" aria-pressed="true">${esc(g)}</button>`).join('')}<span class="cnt"></span><button type="button" class="icon-btn reset">${SVG.reset}Restablecer</button></div>
+  <div class="tl" style="--nc:${groups.length}"><div class="tl-scroll"><div class="tl-grid"><div class="tl-cols"><div></div>${groups.map(g => `<div>${esc(g)}</div>`).join('')}</div>
+  ${tiers.map(t => `<div class="tl-row"><div class="tl-t tier-${t}">${t}</div>${groups.map(g => `<div class="tl-c" data-t="${t}" data-g="${esc(g)}"></div>`).join('')}</div>`).join('')}</div></div></div>`;
+  let i = 0;
+  items.forEach(it => {
+    const c = el.querySelector(`.tl-c[data-t="${it.tier}"][data-g="${CSS.escape(o.group(it))}"]`); if (!c) return;
+    const d = document.createElement('div'); d.className = 'tt'; d.tabIndex = 0; d.setAttribute('role', 'button');
+    d.dataset.n = norm(it[o.name]); d.dataset.g = o.group(it); d.dataset.id = it.id;
+    d.style.setProperty('--c', it.col || TC[it.tier]); d.style.setProperty('--i', Math.min(i++, 60));
+    d.setAttribute('aria-label', `${it[o.name]}, tier ${it.tier}`);
+    d.innerHTML = `${o.icon(it)}<span class="nm">${esc(it[o.name])}</span><span class="pw">${o.label ? o.label(it) : fmt(o.value(it))}</span>`;
+    d.addEventListener('click', () => o.detail(it)); d.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); o.detail(it); } });
+    c.appendChild(d);
+  });
+  const cnt = $('.cnt', el), all = $$('.tt', el);
+  const apply = () => { let n = 0; all.forEach(t => { const dim = (q && !t.dataset.n.includes(q)) || off.has(t.dataset.g); t.classList.toggle('dim', dim); if (!dim) n++; }); cnt.innerHTML = `<b>${n}</b> de ${all.length}`; };
+  $('input', el).addEventListener('input', e => { q = norm(e.target.value.trim()); apply(); });
+  $$('.tg[data-g]', el).forEach(b => b.addEventListener('click', () => { const g = b.dataset.g; const on = b.classList.toggle('on'); b.setAttribute('aria-pressed', on); on ? off.delete(g) : off.add(g); apply(); }));
+  $('.reset', el).addEventListener('click', () => { q = ''; off.clear(); $('input', el).value = ''; $$('.tg[data-g]', el).forEach(b => { b.classList.add('on'); b.setAttribute('aria-pressed', true); }); apply(); });
+  apply(); hydrate(el);
+}
+
+// ---------- ficha (drawer)
+const dr = $('#dr'), scrim = $('#scrim'); let drBack = null, drView = null;
+function openDrawer(o) {
+  drBack = document.activeElement;
+  dr.classList.toggle('wide', !!o.wide); dr.style.setProperty('--c', o.color || 'var(--azure)');
+  const bars = (o.bars || []).map(([l, v, m, txt, sub], i) => `<div class="sb" style="--i:${i}"><div class="sb__l"><span>${l}</span><span><b>${txt ?? fmt(v)}</b>${sub ? `<small>${sub}</small>` : ''}</span></div><div class="sb__t"><i style="width:${Math.max(1.5, Math.min(100, (+v || 0) / m * 100))}%"></i></div></div>`).join('');
+  const acts = [o.link ? `<button type="button" class="icon-btn" data-act="link">${SVG.link}Copiar enlace</button>` : '', o.compare ? `<button type="button" class="icon-btn" data-act="cmp">${SVG.cmp}${cmpHas(o.compare) ? 'En el comparador' : 'Añadir al comparador'}</button>` : ''].join('');
+  dr.innerHTML = `<div class="dr__hero"><div class="dr__bar"><span class="eyebrow">${esc(o.kind)}</span><button class="dr__x" type="button" aria-label="Cerrar ficha">${SVG.x}</button></div>
+    <div class="dr__id"><div class="dr__art">${o.art}</div><div><h2 id="dr-title">${esc(o.title)}</h2><p>${o.sub || ''}</p></div></div></div>
+    <div class="dr__body">${acts ? `<div class="dr__acts">${acts}</div>` : ''}${bars ? `<div><h4>Estadísticas · frente al máximo de la lista</h4><div class="statbars">${bars}</div></div>` : ''}
+    ${o.kv && o.kv.length ? `<div><h4>Ficha</h4><div class="dkv">${o.kv.map(([k, v]) => `<div><span>${esc(k)}</span><b>${v}</b></div>`).join('')}</div></div>` : ''}${o.extra || ''}</div>`;
+  hydrate(dr);
+  dr.classList.add('on'); scrim.classList.add('on'); dr.scrollTop = 0; $('.dr__body', dr).scrollTop = 0;
+  document.documentElement.style.overflow = 'hidden';
+  $('.dr__x', dr).onclick = closeDrawer;
+  const l = $('[data-act=link]', dr); if (l) l.onclick = () => { const u = location.href.split('#')[0] + '#' + o.link; (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(() => toast('Enlace copiado'), () => prompt('Copia el enlace:', u)); };
+  const c = $('[data-act=cmp]', dr); if (c) c.onclick = () => { cmpAdd(o.compare); c.innerHTML = SVG.cmp + 'En el comparador'; };
+  if (o.link) { drView = o.link.split('/')[0]; history.replaceState(null, '', '#' + o.link); }
+  setTimeout(() => $('.dr__x', dr).focus({ preventScroll: true }), 50);
+}
+function closeDrawer() {
+  if (!dr.classList.contains('on')) return;
+  dr.classList.remove('on'); scrim.classList.remove('on'); document.documentElement.style.overflow = '';
+  if (drView && location.hash.includes('/')) history.replaceState(null, '', '#' + drView);
+  drView = null; if (drBack && drBack.focus) drBack.focus({ preventScroll: true });
+}
+scrim.addEventListener('click', closeDrawer);
+// cerrar arrastrando hacia abajo en móvil
+{ let y0 = null; dr.addEventListener('touchstart', e => { if (e.target.closest('.dr__hero')) y0 = e.touches[0].clientY; }, { passive: true });
+  dr.addEventListener('touchend', e => { if (y0 != null && e.changedTouches[0].clientY - y0 > 80) closeDrawer(); y0 = null; }, { passive: true }); }
+
+const MX = {};
+const mxA = () => MX.a || (MX.a = { poder: max(D.armaduras, 'poder'), armadura: max(D.armaduras, 'armadura'), dureza: max(D.armaduras, 'dureza'), vida: max(D.armaduras, 'vida') });
+const mxW = () => MX.w || (MX.w = { poder: max(D.armas, 'poder'), dano: max(D.armas, 'dano'), max: max(D.armas, 'max'), media: max(D.armas, 'media') });
+const mxN = () => MX.n || (MX.n = { vida: max(D.anomalias, 'vida'), dano_real: max(D.anomalias, 'dano_real'), dificultad: max(D.anomalias, 'dificultad') });
+const rankOf = (list, it, k) => [...list].sort((a, b) => b[k] - a[k]).indexOf(it) + 1;
+
+function setDetail(s) {
+  const m = mxA();
+  openDrawer({ kind: 'Armadura · ' + s.origen, title: s.nombre, art: ico(s.icon, s.dye, 1), color: s.col || TC[s.tier], link: 'tl-armaduras/' + s.id, compare: { kind: 'a', it: s },
+    sub: `<span class="pill tier-${s.tier}">${s.tier}</span> Puesto ${rankOf(D.armaduras, s, 'poder')} de ${D.armaduras.length} por poder`,
+    bars: [['Poder', s.poder, m.poder], ['Armadura', s.armadura, m.armadura], ['Dureza', s.dureza, m.dureza], ['Vida extra', s.vida, m.vida]],
+    kv: [['Origen', esc(s.origen)], ['Tier', `<span class="pill tier-${s.tier}">${s.tier}</span>${fmt(s.poder)}`], ['Piezas', fmt((s.piezas || []).length)], ['Id', esc(s.id)]],
+    extra: s.piezas && s.piezas.length ? `<div><h4>Piezas</h4><div class="pieces">${s.piezas.map((p, i) => `<div class="pc" style="--i:${i}">${ico(p.m, p.d)}<span><b>${esc(p.n)}</b><small>${fmt(p.a)} arm · ${fmt(p.t)} dur · +${fmt(p.v)} vida</small></span></div>`).join('')}</div></div>` : '' });
+}
+function armaDetail(a) {
+  const m = mxW();
+  openDrawer({ kind: 'Arma · ' + a.clase, title: a.nombre, art: ico(a.icon, null, 1), color: a.col || TC[a.tier], link: 'tl-armas/' + a.id, compare: { kind: 'w', it: a },
+    sub: `<span class="pill tier-${a.tier}">${a.tier}</span> Puesto ${rankOf(D.armas, a, 'poder')} de ${D.armas.length} por poder`,
+    bars: [['Poder', a.poder, m.poder], ['Daño normal', a.dano, m.dano], ['Daño crítico', a.max, m.max], ['Daño medio', a.media, m.media], ['Prob. de crítico', a.critico, 100, a.critico + ' %']],
+    kv: [['Clase', esc(a.clase)], ['Origen', esc(a.origen)], ['Tier', `<span class="pill tier-${a.tier}">${a.tier}</span>${fmt(a.poder)}`], ['Id', esc(a.id)]] });
+}
+function anDetail(a) {
+  const N = a.dano || 1, x = v => v == null ? '—' : fmt(Math.round(v * 10) / 10), m = mxN();
+  const rng = (h, k) => h.mn == null ? '<span class="mut">sin golpe directo</span>' : h.mn >= 1000 ? '<b>letal</b>' : (h.mn === h.mx ? x(h.mn * h.m * k) : x(h.mn * h.m * k) + '–' + x(h.mx * h.m * k));
+  const rows = (a.habs || []).map(h => `<tr${h.act ? '' : ' class="off"'}><td><b>${esc(h.n)}</b>${h.act ? '' : ' <span class="mut">(apagada)</span>'}<div class="mut sm">${esc(h.desc)}${h.nota ? ' · <i>' + esc(h.nota) + '</i>' : ''}</div></td><td>${h.f ? h.f : 'Todas'}</td><td class="n">${fmt(h.cd)} s</td><td class="n">${h.m === 1 ? '—' : '×' + fmt(h.m)}</td><td class="n">${rng(h, 1)}</td><td class="n hx">${rng(h, N)}</td></tr>`).join('');
+  const tab = a.habs && a.habs.length ? `<div><h4>Habilidades · daño por golpe</h4><p class="mut sm" style="margin:0 0 10px">×1 = valor de diseño del código (nivel 1). ×${fmt(N)} = con el multiplicador de su ficha, que es lo que pega hoy en el Survival. Daño antes de armadura y en la fase 1 (las fases altas suben entre un 10 % y un 60 %).</p><div class="ht-wrap"><table class="ht"><thead><tr><th>Habilidad</th><th>Fase</th><th class="n">Recarga</th><th class="n">Ajuste</th><th class="n">×1</th><th class="n">×${fmt(N)}</th></tr></thead><tbody>${rows}</tbody></table></div></div>` : '<p class="mut sm">Esta anomalía no tiene lista de habilidades en el código de EDM.</p>';
+  openDrawer({ kind: 'Anomalía · ' + a.clase, title: a.nombre, art: face(a), color: TC[a.tier], link: 'tl-anomalias/' + a.id, wide: true,
+    sub: `<span class="pill tier-${a.tier}">${a.tier}</span> Puesto ${rankOf(D.anomalias, a, 'dificultad')} de ${D.anomalias.length} por puntuación`,
+    bars: [['Vida', a.vida, m.vida, fmt(a.vida), a.vida_base ? `${fmt(a.vida_base)} ×${fmt(a.vida_x)}` : ''], ['Daño medio por golpe', a.dano_real, m.dano_real, x(a.dano_real), `${x(a.dano_base)} ×${fmt(N)}`], ['Puntuación (vida × daño medio)', a.dificultad, m.dificultad]],
+    kv: [['Clase', esc(a.clase)], ['Tier', `<span class="pill tier-${a.tier}">${a.tier}</span>${fmt(a.dificultad)}`], ['Vida', a.vida_base ? `${fmt(a.vida_base)} → ${fmt(a.vida)}` : fmt(a.vida)], ['Daño medio', `${x(a.dano_base)} → ${x(a.dano_real)}`], ['Bioma', esc(a.bioma)], ['MobCoins por participante', fmt(a.mobcoins)], ['Experiencia', fmt(a.exp)], ['Objetos en su botín', fmt(a.botin)], ['Habilidades', fmt(a.habilidades)]],
+    extra: tab });
+}
+const FIND = { 'tl-armaduras': [() => D.armaduras, setDetail], 'tl-armas': [() => D.armas, armaDetail], 'tl-anomalias': [() => D.anomalias, anDetail] };
+
+// ---------- comparador
+const tray = $('#tray'), cmpEl = $('#cmp'); const CMP = { kind: null, items: [] };
+const CMPDEF = {
+  a: { t: 'armaduras', rows: [['Poder', 'poder'], ['Armadura', 'armadura'], ['Dureza', 'dureza'], ['Vida extra', 'vida']], ico: s => ico(s.icon, s.dye, 1), detail: setDetail },
+  w: { t: 'armas', rows: [['Poder', 'poder'], ['Daño normal', 'dano'], ['Daño crítico', 'max'], ['Daño medio', 'media'], ['Prob. de crítico', 'critico', ' %']], ico: a => ico(a.icon, null, 1), detail: armaDetail }
+};
+const cmpHas = c => CMP.kind === c.kind && CMP.items.includes(c.it);
+function cmpAdd(c) {
+  if (CMP.kind && CMP.kind !== c.kind) { CMP.items = []; toast('Comparador reiniciado: solo se comparan ' + CMPDEF[c.kind].t + ' entre sí'); }
+  CMP.kind = c.kind;
+  if (CMP.items.includes(c.it)) { toast('Ya está en el comparador'); return; }
+  if (CMP.items.length >= 4) CMP.items.shift();
+  CMP.items.push(c.it); drawTray(); if (CMP.items.length === 1) toast('Añade otro para comparar');
+}
+function drawTray() {
+  if (!CMP.items.length) { tray.classList.remove('on'); CMP.kind = null; return; }
+  const d = CMPDEF[CMP.kind];
+  tray.innerHTML = `<span class="tray__k">Comparar ${d.t}</span><div class="tray__items">${CMP.items.map((it, i) => `<button type="button" class="tray__it" data-i="${i}" title="Quitar ${esc(it.nombre)}">${d.ico(it)}</button>`).join('')}</div><button type="button" class="btn btn--p" data-go ${CMP.items.length < 2 ? 'disabled style="opacity:.5;pointer-events:none"' : ''}>${SVG.cmp}Comparar ${CMP.items.length}</button><button type="button" class="dr__x" data-clear aria-label="Vaciar comparador">${SVG.x}</button>`;
+  hydrate(tray); tray.classList.add('on');
+}
+tray.addEventListener('click', e => {
+  const it = e.target.closest('.tray__it'); if (it) { CMP.items.splice(+it.dataset.i, 1); drawTray(); return; }
+  if (e.target.closest('[data-clear]')) { CMP.items = []; drawTray(); return; }
+  if (e.target.closest('[data-go]')) openCmp();
+});
+function openCmp() {
+  const d = CMPDEF[CMP.kind], its = CMP.items;
+  const cells = d.rows.map(([l, k, u]) => { const m = Math.max(...its.map(i => +i[k] || 0), 1); return `<div class="lb">${l}</div>` + its.map(i => `<div class="vl${(+i[k] || 0) === m ? ' best' : ''}"><span>${fmt(i[k])}${u || ''}</span><i style="width:${(+i[k] || 0) / m * 100}%"></i></div>`).join(''); }).join('');
+  cmpEl.innerHTML = `<div class="cmp__box"><div class="cmp__h"><span class="eyebrow">Comparador</span><h2>${its.length} ${d.t} frente a frente</h2><button type="button" class="dr__x" aria-label="Cerrar comparador">${SVG.x}</button></div>
+  <div class="cmp__cols" style="--n:${its.length}"><div></div>${its.map((i, n) => `<div class="hd">${d.ico(i)}<b>${esc(i.nombre)}</b><span class="pill tier-${i.tier}">${i.tier}</span></div>`).join('')}${cells}</div>
+  <p class="mut sm" style="margin:16px 0 0">★ el mejor valor de cada fila.</p></div>`;
+  hydrate(cmpEl); cmpEl.classList.add('on'); $('.dr__x', cmpEl).onclick = closeCmp; $('.dr__x', cmpEl).focus();
+}
+const closeCmp = () => cmpEl.classList.remove('on');
+cmpEl.addEventListener('click', e => { if (e.target === cmpEl) closeCmp(); });
+
+// ---------- constructores de vistas
+const tierStats = (list, tiers) => tiers.map(t => [`Tier ${t}`, list.filter(x => x.tier === t).length]).filter(x => x[1]);
+const B = {
+  inicio(el) {
+    const topA = [...D.armaduras].sort((a, b) => b.poder - a.poder), topW = [...D.armas].sort((a, b) => b.poder - a.poder), topN = [...D.anomalias].sort((a, b) => b.dificultad - a.dificultad);
+    const vidas = D.anomalias.map(a => a.vida), cajasN = D.cajas.length, tiersE = new Set(D.encantamientos.map(e => e.tier)).size;
+    const k = (t, v, s, ic, i) => `<div class="kpi rv" style="--d:${i * 70}ms"><div class="k">${t}</div><div class="v" data-count="${v}">0</div><div class="s">${s}</div>${ico(ic)}</div>`;
+    const letters = (w, cls) => [...w].map((ch, i) => `<span class="l${cls || ''}"><span style="--i:${i + (cls ? 3 : 0)}">${ch}</span></span>`).join('');
+    const mq = [...topA.slice(0, 10).map(s => ({ v: 'tl-armaduras', it: s, i: ico(s.icon, s.dye) })), ...topW.slice(0, 8).map(a => ({ v: 'tl-armas', it: a, i: ico(a.icon) })), ...topN.slice(0, 6).map(a => ({ v: 'tl-anomalias', it: a, i: face(a), val: '♥ ' + fmtK(a.vida) }))];
+    const mqHtml = mq.map(m => `<button type="button" class="mq-item" data-go="${m.v}/${esc(m.it.id)}">${m.i}<b>${esc(m.it.nombre)}</b><span class="pill tier-${m.it.tier}">${m.it.tier}</span><span>${m.val || fmt(m.it.poder)}</span></button>`).join('');
+    const champ = (kind, it, val, unit, art, v) => `<button type="button" class="champ glass spot rv" style="--c:${it.col || TC[it.tier]}" data-go="${v}/${esc(it.id)}"><div class="champ__top"><div><div class="champ__k">${kind}</div></div><div class="champ__rank">#1</div></div><div class="champ__art">${art}</div><div><h3>${esc(it.nombre)}</h3><div class="champ__v"><b>${val}</b>${unit} <span class="pill tier-${it.tier}">${it.tier}</span></div></div></button>`;
+    const bento = VIEWS.filter(v => v.id !== 'inicio').map((v, i) => {
+      const strip = v.id === 'tl-armaduras' ? topA.slice(0, 6).map(s => ico(s.icon, s.dye)).join('') : v.id === 'tl-armas' ? topW.slice(0, 5).map(a => ico(a.icon)).join('') : '';
+      return `<a class="bx ${v.w} glass spot rv" style="--d:${(i % 3) * 70}ms" href="#${v.id}"><div class="bx__top"><span class="bx__ic">${ico(v.ic)}</span><span class="bx__n">${pad(i + 1)}</span></div><div><h3>${v.t}</h3><p>${v.d}</p>${strip ? `<div class="bx__strip">${strip}</div>` : ''}</div><div class="bx__go"><span>${v.n ? NF.format(v.n()) + ' entradas' : 'Ver sección'}</span>${SVG.ne}</div></a>`;
+    }).join('');
+    el.innerHTML = `<section class="hero" id="hero"><canvas aria-hidden="true"></canvas>
+      <div class="hero__in"><div class="hero__txt">
+        <div class="hero__meta"><span class="live"><i></i>Datos del servidor · 31/10/2026</span><span class="chip">${NF.format(D.armaduras.length + D.armas.length + D.anomalias.length + D.premios.length + D.encantamientos.length + D.mascotas.length + D.tags.length + D.jefes.length)} <b>fichas</b></span></div>
+        <h1 aria-label="Docmetry">${letters('DOC')}${letters('METRY', ' ac')}</h1>
+        <p class="hero__lead">La guía del <b>Survival de Ederus</b>, medida al detalle. ${PUB ? 'Equipo, jefes, cajas, economía y rangos del Survival a 31/10/2026, sacados de la configuración real. Toca cualquier objeto para ver su ficha.' : ''}</p>
+        <div class="hero__cta"><a class="btn btn--p" data-mag href="#tl-armaduras">Ver las tier lists ${SVG.arrow}</a><button type="button" class="btn" data-mag data-open-search>${SVG.search.replace('stroke-width="2"', 'stroke="currentColor" stroke-width="2"')}Buscar <kbd>${MAC ? '⌘' : 'Ctrl'} K</kbd></button></div>
+      </div>
+      <div class="hero__orbit" aria-hidden="true"><div class="orbit-ring"></div><div class="orbit-ring r2"></div><div class="orbit-ring r3"></div>
+        <div class="orbit-core">${ico('nether_star')}</div>
+        <div class="float" style="top:2%;left:16%;--z:-28;--dl:0s">${ico(topA[0].icon, topA[0].dye)}<small>${esc(topA[0].nombre)}</small></div>
+        <div class="float" style="top:12%;right:2%;--z:22;--dl:-1.5s">${ico(topW[0].icon)}<small>${esc(topW[0].nombre)}</small></div>
+        <div class="float" style="bottom:12%;left:0;--z:18;--dl:-3s">${ico('tripwire_hook')}<small>${D.cajas.length} cajas</small></div>
+        <div class="float" style="bottom:0;right:18%;--z:-20;--dl:-4.5s">${ico('enchanted_book')}<small>${D.encantamientos.length} encantamientos</small></div>
+        <div class="float" style="top:46%;right:-4%;--z:12;--dl:-2.2s">${ico('gold_ingot')}<small>Economía</small></div>
+      </div></div>
+      <a class="scroll-cue" href="#inicio-kpis" aria-label="Bajar"><i></i>SCROLL</a></section>
+    <div class="marquee" aria-label="Lo más fuerte del Survival"><div class="marquee__track">${mqHtml}${mqHtml.replace(/<button /g, '<button tabindex="-1" aria-hidden="true" ')}</div></div>
+    <div class="kpis" id="inicio-kpis">${k('Sets de armadura', D.armaduras.length, `${esc(topA[0].nombre)} · ${fmt(topA[0].poder)} es el top`, 'netherite_chestplate', 0)}${k('Armas', D.armas.length, `poder de ${fmt(topW[topW.length - 1].poder)} a ${fmt(topW[0].poder)}`, 'netherite_sword', 1)}${k('Anomalías', D.anomalias.length, `de ${fmt(Math.min(...vidas))} a ${fmt(Math.max(...vidas))} de vida`, 'nether_star', 2)}${k('Premios en cajas', D.premios.length, `${cajasN} cajas`, 'tripwire_hook', 3)}${k('Encantamientos', D.encantamientos.length, `${tiersE} tiers`, 'enchanted_book', 4)}${PUB ? k('Mascotas', D.mascotas.length, 'de CombatPets', 'wolf_spawn_egg', 5) : ''}</div>
+    ${sect('Lo más fuerte del Survival', `<div class="podium">${champ('Armadura', topA[0], fmt(topA[0].poder), 'de poder', ico(topA[0].icon, topA[0].dye, 1), 'tl-armaduras')}${champ('Arma', topW[0], fmt(topW[0].poder), 'de poder', ico(topW[0].icon, null, 1), 'tl-armas')}${champ('Anomalía', topN[0], fmtK(topN[0].vida), 'de vida', face(topN[0]), 'tl-anomalias')}</div>`, '01', 'El número uno de cada tier list. Toca para abrir su ficha.')}
+    ${sect('Todo lo que hay dentro', `<div class="bento">${bento}</div>`, '02', 'Tier lists, base de datos y sistemas del servidor.')}
+    ${sect('Cómo sacarle partido', `<div class="tips">${[['Toca cualquier objeto', 'Sets, armas y anomalías abren su ficha con estadísticas, piezas y habilidades.'], [`Busca con ${MAC ? '⌘' : 'Ctrl'} K`, 'Un buscador para todo: premios, encantamientos, mobs, tags y tiendas.'], ['Compara hasta 4', 'Añade sets o armas al comparador desde su ficha y míralos lado a lado.'], ['Comparte el enlace', 'Cada ficha tiene su propia dirección. Cópiala y pásala por Discord.']].map(([t, s], i) => `<div class="tip glass rv" style="--d:${i * 70}ms"><span class="tip__n">${pad(i + 1)}</span><div><b>${t}</b><span>${s}</span></div></div>`).join('')}</div>`, '03')}`;
+    $$('[data-go]', el).forEach(b => b.addEventListener('click', () => { location.hash = b.dataset.go; }));
+    heroFx($('#hero', el));
+  },
+  'tl-armaduras'(el) {
+    el.innerHTML = head('tl-armaduras', 'Tier list de armaduras', 'Poder del set con la fórmula de la guía. EX ≥ 6.800 (Veyra, el set top) · S ≥ 5.080 · A ≥ 4.000 · B ≥ 3.000 · C ≥ 2.000. Toca un set para ver sus piezas.', tierStats(D.armaduras, ['EX', 'S', 'A', 'B', 'C', 'D'])) +
+      `<div id="tl" class="rv"></div>` + sect('Todas las armaduras', '<div id="tb" class="rv"></div>', 'DB', 'Pulsa una fila para abrir la ficha. Ordena tocando la cabecera.') + fichas('armaduras');
+    const G = ['Anomalía', 'Mazmorra', 'Cajas y eventos', 'VIP', 'Calamity', 'Playtime (God Kit)'];
+    tierlist($('#tl', el), D.armaduras.filter(s => G.includes(s.origen)), { groups: G, tiers: ['EX', 'S', 'A', 'B', 'C', 'D'], group: s => s.origen, name: 'nombre', value: s => s.poder, icon: s => ico(s.icon, s.dye, 1), detail: setDetail });
+    table($('#tb', el), [{ k: 'nombre', l: 'Set', render: (r, re) => `<span class="row">${ico(r.icon, r.dye)}<b>${hl(r.nombre, re)}</b></span>` }, { k: 'origen', l: 'Origen' }, { k: 'tier', l: 'Tier', t: 'tier' }, { k: 'poder', l: 'Poder', t: 'bar' }, { k: 'armadura', l: 'Armadura', t: 'num' }, { k: 'dureza', l: 'Dureza', t: 'num' }, { k: 'vida', l: 'Vida extra', t: 'num' }], D.armaduras, { filters: ['origen', 'tier'], sort: 'poder', onRow: setDetail, name: 'armaduras' });
+  },
+  'tl-armas'(el) {
+    el.innerHTML = head('tl-armas', 'Tier list de armas', 'Poder = (golpe medio − 1) × 60, con críticos (MythicLib ×2 + el % del arma). S ≥ 4.600 · A ≥ 3.000 · B ≥ 1.900 · C ≥ 1.000. Los arcos no cuentan el encantamiento Poder.', tierStats(D.armas, ['EX', 'S', 'A', 'B', 'C', 'D'])) +
+      `<div id="tl" class="rv"></div>` + sect('Todas las armas', '<div id="tb" class="rv"></div>', 'DB', 'Incluye las de tier D, que no salen en la tier list.') + fichas('armas');
+    const G = ['Espada', 'Hacha', 'Lanza', 'Tridente', 'Arco', 'Ballesta', 'Mazo'];
+    tierlist($('#tl', el), D.armas.filter(a => a.tier !== 'D'), { groups: G.filter(g => D.armas.some(a => a.clase === g)), tiers: ['EX', 'S', 'A', 'B', 'C'], group: a => a.clase, name: 'nombre', value: a => a.poder, icon: a => ico(a.icon, null, 1), detail: armaDetail });
+    table($('#tb', el), [{ k: 'nombre', l: 'Arma', render: (r, re) => `<span class="row">${ico(r.icon)}<b>${hl(r.nombre, re)}</b></span>` }, { k: 'clase', l: 'Clase' }, { k: 'origen', l: 'Origen' }, { k: 'tier', l: 'Tier', t: 'tier' }, { k: 'dano', l: 'Daño', t: 'num' }, { k: 'critico', l: 'Crítico', t: 'num', u: ' %' }, { k: 'max', l: 'Daño crítico', t: 'num' }, { k: 'poder', l: 'Poder', t: 'bar' }], D.armas, { filters: ['clase', 'origen', 'tier'], sort: 'poder', onRow: armaDetail, name: 'armas' });
+  },
+  'tl-anomalias'(el) {
+    el.innerHTML = head('tl-anomalias', 'Tier list de anomalías', 'Puntuación = vida × daño medio por golpe (media de sus habilidades con el multiplicador de su ficha). ♥ vida · ⚔ daño medio. Pulsa una para ver todas sus habilidades a ×1 y a su multiplicador.', tierStats(D.anomalias, ['S', 'A', 'B', 'C', 'D'])) +
+      `<div id="tl" class="rv"></div>` + sect('Comparativa', '<div id="tb" class="rv"></div>', 'DB') + fichas('anomalias');
+    tierlist($('#tl', el), D.anomalias, { groups: ['General', 'Monarca', 'Dios'], tiers: ['S', 'A', 'B', 'C', 'D'], group: a => a.clase, name: 'nombre', value: a => a.dificultad, label: a => `<span title="Vida">♥ ${fmtK(a.vida)}</span> · <span title="Daño medio por golpe">⚔ ${fmt(Math.round(a.dano_real))}</span>`, icon: a => face(a), detail: anDetail });
+    table($('#tb', el), [{ k: 'nombre', l: 'Anomalía', render: (r, re) => `<span class="row">${face(r)}<b>${hl(r.nombre, re)}</b></span>` }, { k: 'clase', l: 'Clase' }, { k: 'tier', l: 'Tier', t: 'tier' }, { k: 'vida', l: 'Vida', t: 'bar' }, { k: 'dano', l: 'Daño ×', t: 'num' }, { k: 'dano_base', l: 'Daño medio ×1', t: 'num' }, { k: 'dano_real', l: 'Daño medio real', t: 'bar' }, { k: 'dificultad', l: 'Puntuación', t: 'num' }, { k: 'mobcoins', l: 'MobCoins', t: 'num' }, { k: 'exp', l: 'EXP', t: 'num' }, { k: 'botin', l: 'Objetos', t: 'num' }, { k: 'bioma', l: 'Bioma' }], D.anomalias, { filters: ['clase', 'tier'], sort: 'dificultad', onRow: anDetail, name: 'anomalias' });
+  },
+  cajas(el) {
+    const C = [...D.cajas].sort((a, b) => b.ev_dinero - a.ev_dinero), mx = Math.max(...C.map(c => c.ev_dinero)), mm = Math.max(...C.map(c => c.ev_mc));
+    el.innerHTML = head('cajas', 'Cajas y premios', `${D.cajas.length} cajas y ${D.premios.length} premios. La probabilidad es el peso del premio entre el total de su caja.`, [['Cajas', D.cajas.length], ['Premios', D.premios.length]]) +
+      sect('Comparativa por caja', `<div class="cards">${C.map((c, i) => `<div class="cc glass spot rv" style="--d:${(i % 4) * 60}ms"><h3>${ico('tripwire_hook')}${esc(c.caja)}<span class="rank">#${pad(i + 1)}</span></h3><div class="kv"><span>Premios</span><span>${c.premios}</span><span>Equipo</span><span>${fmt(c.equipo)} %</span><span>Premio más raro</span><span>${fmt(c.rara)} %</span></div>
+        <div class="mlabel"><span>Dinero medio por llave</span><b>${fmt(c.ev_dinero)}</b></div><div class="meter"><i style="--w:${c.ev_dinero / mx}"></i></div>
+        <div class="mlabel"><span>MobCoins medias por llave</span><b>${fmt(c.ev_mc)}</b></div><div class="meter az"><i style="--w:${c.ev_mc / mm}"></i></div></div>`).join('')}</div>`, '01', 'Ordenadas por dinero medio por llave.') +
+      sect('Todos los premios', '<div id="tb" class="rv"></div>', '02') + fichas('cajas');
+    table($('#tb', el), [{ k: 'caja', l: 'Caja' }, { k: 'premio', l: 'Premio', render: (r, re) => `<b>${hl(r.premio, re)}</b>` }, { k: 'tipo', l: 'Tipo' }, { k: 'rareza', l: 'Rareza' }, { k: 'pct', l: 'Probabilidad', t: 'bar', u: ' %' }, { k: 'limite', l: 'Límite' }], D.premios, { filters: ['caja', 'tipo', 'rareza'], sort: 'pct', name: 'premios' });
+  },
+  encantamientos(el) {
+    const tc = { Simple: 'D', Único: 'C', Elite: 'B', Supremo: 'A', Legendario: 'S', Ancestral: 'EX' }, ord = { Simple: 1, Único: 2, Elite: 3, Supremo: 4, Legendario: 5, Ancestral: 6 };
+    el.innerHTML = head('encantamientos', 'Encantamientos', `Los ${D.encantamientos.length} de AdvancedEnchantments con su efecto al nivel máximo. Libros: /xpshop (Simple a Legendario), Bóveda, cajas, pase, cofres PvP.`, Object.keys(tc).reverse().map(t => [t, D.encantamientos.filter(e => e.tier === t).length]).filter(x => x[1])) + '<div id="tb" class="rv"></div>' + fichas('encantamientos');
+    table($('#tb', el), [{ k: 'nombre', l: 'Encantamiento', render: (r, re) => `<span class="row">${ico('enchanted_book')}<b>${hl(r.nombre, re)}</b></span>` }, { k: 'tier', l: 'Tier', sv: r => ord[r.tier] || 0, render: r => `<span class="pill tier-${tc[r.tier]}">${esc(r.tier)}</span>` }, { k: 'para', l: 'Para' }, { k: 'niveles', l: 'Niveles', t: 'num' }, { k: 'efecto', l: 'Efecto al nivel máximo' }], D.encantamientos, { filters: ['tier', 'para'], sort: 'tier', dir: -1, name: 'encantamientos' });
+  },
+  mazmorras(el) {
+    const top = [...D.jefes].sort((a, b) => b.vida - a.vida);
+    el.innerHTML = head('mazmorras', 'Jefes y tropa de mazmorra', 'Mobs de MythicMobs (Mazmorra del Dragón, Artoria, Culto, Juicio Final). Dungeons está en dificultad Difícil.', [['Mobs', D.jefes.length], ['Más vida', `${esc(top[0].mob)} · ${fmt(top[0].vida)}`]]) + '<div id="tb" class="rv"></div>' + fichas('mazmorras');
+    table($('#tb', el), [{ k: 'mob', l: 'Mob', render: (r, re) => `<span class="row">${mobFace(r)}<b>${hl(r.mob, re)}</b></span>` }, { k: 'vida', l: 'Vida', t: 'bar' }, { k: 'dano', l: 'Daño', t: 'num' }, { k: 'armadura', l: 'Armadura', t: 'num' }, { k: 'habilidades', l: 'Habilidades', t: 'num' }, { k: 'fichero', l: 'Grupo' }], D.jefes, { filters: ['fichero'], sort: 'vida', name: 'mazmorras' });
+  },
+  mascotas(el) {
+    el.innerHTML = head('mascotas', 'Mascotas', `${D.mascotas.length} mascotas de CombatPets. Fuente según las cajas; las demás se capturan.`, [['Mascotas', D.mascotas.length], ['Capturables', D.mascotas.filter(m => m.capturable === 'Sí').length]]) + '<div id="tb" class="rv"></div>' + fichas('mascotas');
+    table($('#tb', el), [{ k: 'mascota', l: 'Mascota', render: (r, re) => `<span class="row">${ico(r.icon)}<b>${hl(r.mascota, re)}</b></span>` }, { k: 'vida', l: 'Vida', t: 'bar' }, { k: 'dano', l: 'Daño', t: 'num' }, { k: 'capturable', l: 'Capturable' }, { k: 'fuente', l: 'De dónde sale' }], D.mascotas, { filters: ['capturable'], sort: 'vida', name: 'mascotas' });
+  },
+  tags(el) {
+    const cats = [...new Set(D.tags.map(t => t.categoria))];
+    el.innerHTML = head('tags', 'Tags', `Los ${D.tags.length} tags del plugin Tags y cómo se consiguen.`, [['Tags', D.tags.length], ['Categorías', cats.length]]) + '<div id="tb" class="rv"></div>';
+    table($('#tb', el), [{ k: 'tag', l: 'Tag', render: (r, re) => `<span class="row">${ico('name_tag')}<b>${hl(r.tag, re)}</b></span>` }, { k: 'categoria', l: 'Categoría' }, { k: 'fuente', l: 'Cómo se consigue' }], D.tags, { filters: ['categoria'], name: 'tags' });
+  },
+  economia(el) {
+    const src = [['Rankup (20 rangos)', 9400000], ['Misiones de una vez', 7500000], ['Diaria Monarch (30 días)', 4830000], ['Playtime (99 niveles)', 3916500], ['AuraSkills (11 habilidades al 100)', 2310000], ['Pase S2 premium', 1896000], ['Pase S2 gratis', 851000], ['Votos (30 días)', 540000], ['Diaria Aeris (30 días)', 330000]];
+    const m = Math.max(...src.map(s => s[1]));
+    el.innerHTML = head('economia', 'Economía y MobCoins', 'Dónde nace el dinero, dónde muere y cuánto vale cada cosa en MobCoins.', [['Artículos en /shop', D.shop.length], ['Pagos de Jobs', D.jobs.length], ['Tiendas de MC', new Set(D.mc_tiendas.map(t => t.tienda)).size]]) +
+      sect('De dónde sale el dinero', `<div class="glass rv"><div class="hbars">${src.map(([n, v], i) => `<div class="hb" style="--i:${i}"><span>${n}</span><div class="tr"><i style="--w:${v / m}"></i></div><b>${fmt(v)}</b></div>`).join('')}<div class="hb-total"><span>Si sumas todas las fuentes</span><b>${fmt(src.reduce((a, s) => a + s[1], 0))}</b></div></div></div>`, '01') +
+      sect('MobCoins por mob', '<div id="mc" class="rv"></div>', '02') + sect('Tiendas de MobCoins', '<div id="mt" class="rv"></div>', '03') + sect('/shop: compra y venta', '<div id="sh" class="rv"></div>', '04') + sect('Jobs: pago por acción (nivel 1)', '<div id="jb" class="rv"></div>', '05') + fichas('economia');
+    table($('#mc', el), [{ k: 'mob', l: 'Mob' }, { k: 'prob', l: 'Prob.', t: 'num', u: ' %' }, { k: 'cantidad', l: 'Cantidad' }, { k: 'media', l: 'Media por muerte', t: 'bar' }], D.mc_drops, { sort: 'media', name: 'mobcoins' });
+    table($('#mt', el), [{ k: 'tienda', l: 'Tienda' }, { k: 'articulo', l: 'Artículo', render: (r, re) => `<b>${hl(r.articulo, re)}</b>` }, { k: 'precio', l: 'Precio (MC)', t: 'bar' }, { k: 'stock', l: 'Stock', t: 'num' }, { k: 'limite', l: 'Límite por jugador', t: 'num' }], D.mc_tiendas, { filters: ['tienda'], sort: 'precio', name: 'tiendas-mc' });
+    table($('#sh', el), [{ k: 'seccion', l: 'Sección' }, { k: 'articulo', l: 'Artículo' }, { k: 'compra', l: 'Compra', t: 'num' }, { k: 'venta', l: 'Venta', t: 'bar' }], D.shop, { filters: ['seccion'], sort: 'venta', name: 'shop' });
+    table($('#jb', el), [{ k: 'oficio', l: 'Oficio' }, { k: 'accion', l: 'Acción' }, { k: 'objetivo', l: 'Objetivo' }, { k: 'dinero', l: 'Dinero', t: 'bar' }, { k: 'exp', l: 'XP', t: 'num' }], D.jobs, { filters: ['oficio', 'accion'], sort: 'dinero', name: 'jobs' });
+  },
+  progresion(el) {
+    el.innerHTML = head('progresion', 'Rankup, playtime y misiones', 'Lo que se gana subiendo de rango, jugando horas y haciendo misiones.', [['Rankups', D.rankup.length], ['Niveles de playtime', D.playtime.length], ['Misiones', D.misiones.length]]) +
+      sect('Playtime: horas por nivel', '<div class="glass chart" id="ch"></div>', '01', 'Pasa el ratón por la curva para ver cada nivel.') + sect('Los 20 rankups', '<div id="rk" class="rv"></div>', '02') + sect('Playtime nivel a nivel', '<div id="pt" class="rv"></div>', '03') + sect('Misiones', '<div id="ms" class="rv"></div>', '04') + fichas('progresion');
+    chartPlaytime($('#ch', el));
+    table($('#rk', el), [{ k: 'rango', l: 'Rango', t: 'num' }, { k: 'requisitos', l: 'Requisitos', t: 'num' }, { k: 'horas', l: 'Horas mín.', t: 'num' }, { k: 'dinero', l: 'Dinero', t: 'bar' }, { k: 'mobcoins', l: 'MobCoins', t: 'num' }, { k: 'exp', l: 'XP', t: 'num' }, { k: 'extras', l: 'Extras' }], D.rankup, { sort: 'rango', dir: 1, name: 'rankup' });
+    table($('#pt', el), [{ k: 'nivel', l: 'Nivel', t: 'num' }, { k: 'horas', l: 'Horas', t: 'num' }, { k: 'dinero', l: 'Dinero', t: 'bar' }, { k: 'mobcoins', l: 'MobCoins', t: 'num' }, { k: 'exp', l: 'Niveles de XP', t: 'num' }, { k: 'extras', l: 'Extras' }], D.playtime, { sort: 'nivel', dir: 1, name: 'playtime' });
+    table($('#ms', el), [{ k: 'categoria', l: 'Categoría' }, { k: 'mision', l: 'Misión' }, { k: 'objetivo', l: 'Objetivo' }, { k: 'dinero', l: 'Dinero', t: 'bar' }, { k: 'niveles', l: 'Niveles', t: 'num' }, { k: 'mobcoins', l: 'MobCoins', t: 'num' }], D.misiones, { filters: ['categoria'], sort: 'dinero', name: 'misiones' });
+  },
+  rangos(el) {
+    const R = [['Precio', '—', '15 $', '20 $', '25 $', '42,99 $'], ['Homes', '1', '5', '10', '15', '30'], ['Protecciones', '1', '4', '10', '10', '20'], ['Minions', '5', '10', '20', '∞', '∞'], ['Subastas', '1', '5', '10', '20', '20'], ['Bóvedas /pv', '1', '4', '5', '6', '15'], ['Warps personales', '—', '3', '4', '5', '5'], ['Trabajos a la vez', '—', '5', '8', '12', '12'], ['XP de habilidades', '—', '—', '+20 %', '+35 %', '+50 %'], ['Recompensa diaria', '1.000 $', '11.000 $', '36.000 $', '86.000 $', '161.000 $'], ['Kit semanal (poder del set)', '—', '3.120', '3.760', '4.400', '5.080'], ['Fly · autosell · TP sin espera', '—', '✔', '✔', '✔', '✔'], ['Conservar inventario*', '—', '✔', '✔', '✔', '✔'], ['Conservar EXP', '—', '—', '—', '✔', '✔'], ['/itemname, /sit', '—', '—', '✔', '✔', '✔'], ['/hat, /ptime, /lay', '—', '—', '—', '✔', '✔'], ['Efectos RIP', '—', '10', '20', '32', '42'], ['Glow', '—', '16 colores', '16', '16 + parpadeo', '+ arcoíris']];
+    const H = ['Sin rango', 'Aeris', 'Astral', 'Eternal', 'Monarch'];
+    const cellv = c => c === '✔' ? '<span class="yes" aria-label="Sí">✔</span>' : c === '—' ? '<span class="dash" aria-label="No">—</span>' : esc(c);
+    el.innerHTML = head('rangos', 'Rangos VIP', PUB ? 'Lo que da cada rango en el servidor.' : '', [['Rangos', 4], ['Beneficios comparados', R.length - 1]]) +
+      `<div class="mx-wrap rv"><table class="mx"><thead><tr><th scope="col">Beneficio</th>${H.map((h, i) => `<th scope="col" data-c="${i + 1}"${i === 4 ? ' class="hl"' : ''}><div class="rk"><b>${h}</b><small>${R[0][i + 1]}</small></div></th>`).join('')}</tr></thead><tbody>${R.slice(1).map(r => `<tr>${r.map((c, i) => i ? `<td data-c="${i}"${i === 5 ? ' class="hl"' : ''}>${cellv(c)}</td>` : `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` + fichas('rangos');
+    const t = $('.mx', el);
+    t.addEventListener('mouseover', e => { const c = e.target.closest('[data-c]'); $$('.colhov', t).forEach(x => x.classList.remove('colhov')); if (c) $$(`[data-c="${c.dataset.c}"]`, t).forEach(x => x.classList.add('colhov')); });
+    t.addEventListener('mouseleave', () => $$('.colhov', t).forEach(x => x.classList.remove('colhov')));
+  },
+  combate(el) {
+    const rows = [['Zombi', 3, .25, .24, .12], ['Élite de horda (zombi ×1,8)', 5.4, .49, .47, .22], ['Esqueleto', 4, .35, .33, .16], ['Creeper a bocajarro', 43, 9.75, 8.42, 1.72], ['Piglin / wither del Nether', 5, .45, .43, .2], ['Élite del Nether', 9, .94, .88, .36], ['Ahogado de la Marea (pesca)', 14, '2,4*', '2,4*', '2,4*'], ['Zombi en Dungeons', 4.5, .4, .38, .18]];
+    const heat = v => typeof v !== 'number' ? '' : ` style="background:rgba(255,107,107,${Math.min(.5, v / 20 * .5 + .03).toFixed(3)})"`;
+    el.innerHTML = head('combate', 'Dificultad y hordas', 'Cuánto pega cada cosa con cada armadura. Overworld en Normal, Nether en Fácil, Dungeons en Difícil.', [['Overworld', 'Normal'], ['Nether', 'Fácil'], ['Dungeons', 'Difícil']]) +
+      `<div class="rv"><div class="tw" style="max-height:none"><table><thead><tr><th style="cursor:default">Golpe</th><th class="num" style="cursor:default">Sin armadura</th><th class="num" style="cursor:default">Diamante Prot IV</th><th class="num" style="cursor:default">Netherita Prot IV</th><th class="num" style="cursor:default">Armadura al tope</th></tr></thead><tbody>${rows.map(r => `<tr>${r.map((c, i) => i ? `<td class="num"${heat(c)}><b>${fmt(c)}</b></td>` : `<td><b>${esc(c)}</b></td>`).join('')}</tr>`).join('')}</tbody></table></div></div>
+      <p class="note rv">Daño que llega al jugador (20 de vida = 10 corazones). El color se intensifica cuanto más pega. * La pesca extrema quita como mínimo el 12 % de tu vida por golpe.</p>` + fichas('combate');
+  },
+  calamity(el) {
+    const sets = D.armaduras.filter(s => s.origen === 'Calamity').sort((a, b) => b.poder - a.poder);
+    el.innerHTML = head('calamity', 'Calamity y pesca', 'El modo hardcore: amenazas, Esencias, Altar, Forja y la pesca de Calamity.', [['Sets de Calamity', sets.length]]) +
+      (sets.length ? sect('Sets de armadura de Calamity', `<div class="cards">${sets.map((s, i) => `<button type="button" class="cc glass spot rv" style="--d:${(i % 4) * 60}ms;text-align:left;cursor:pointer;color:inherit;font:inherit" data-id="${esc(s.id)}"><h3>${ico(s.icon, s.dye)}${esc(s.nombre)}<span class="rank"><span class="pill tier-${s.tier}">${s.tier}</span></span></h3><div class="mlabel"><span>Poder</span><b>${fmt(s.poder)}</b></div><div class="meter az"><i style="--w:${s.poder / mxA().poder}"></i></div><div class="kv"><span>Armadura</span><span>${fmt(s.armadura)}</span><span>Dureza</span><span>${fmt(s.dureza)}</span><span>Vida extra</span><span>${fmt(s.vida)}</span></div></button>`).join('')}</div>`, '01', 'Sacados de la tier list de armaduras. Toca uno para ver sus piezas.') : '') +
+      sect('Pesca extrema', `<p class="note rv">El Ahogado de la Marea pega 14 sin armadura, y la pesca extrema quita como mínimo el 12 % de tu vida por golpe, lleves la armadura que lleves. Más detalle en <a href="#combate">Dificultad y hordas</a>.</p>`, sets.length ? '02' : '01') + fichas('calamity');
+    $$('[data-id]', el).forEach(b => b.addEventListener('click', () => setDetail(sets.find(s => s.id === b.dataset.id))));
+  },
+  mundo(el) {
+    const C = { Piedra: '#8a8f98', Hierro: '#d8c3a5', Carbón: '#3b3f46', Oro: '#f2c14e', Redstone: '#e2483f', Lapislázuli: '#3c5fd1', Diamante: '#5fe3d6', Esmeralda: '#41c46b', Escombros: '#7a5440' };
+    el.innerHTML = head('mundo', 'Mundo y servicios', 'Minions, protecciones, minas, spawners y otros servicios.', [['Minas', D.minas.length], ['Minions', D.minions.length]]) +
+      sect('Minas (lo que sale al picar)', `<div class="cards">${D.minas.map((m, n) => `<div class="cc glass spot rv" style="--d:${n * 80}ms"><h3>${ico('iron_pickaxe')}${esc(m.mina)}</h3><div class="mlabel"><span>Se rellena cada</span><b>${esc(m.reinicio)}</b></div><div class="stack">${Object.entries(m.comp).map(([k, v], i) => `<span style="--w:${v}%;--i:${i};background:${C[k]}" title="${k} ${fmt(v)} %">${v >= 6 ? fmt(Math.round(v)) + '%' : ''}</span>`).join('')}</div><div class="kv">${Object.entries(m.comp).map(([k, v]) => `<span>${k}</span><span>${fmt(v)} %</span>`).join('')}</div></div>`).join('')}</div><div class="legend rv">${Object.entries(C).map(([k, v]) => `<span><b style="background:${v}"></b>${k}</span>`).join('')}</div>`, '01') +
+      sect('Minions: coste de subir al nivel 10', '<div id="mn" class="rv"></div>', '02') +
+      sect('Protecciones', `<div class="cards">${[['16×16', '20.000', 'yellow_glazed_terracotta'], ['32×32', '60.000', 'lime_glazed_terracotta'], ['64×64', '120.000', 'light_blue_glazed_terracotta'], ['128×128', 'solo web', 'magenta_glazed_terracotta'], ['256×256', 'solo web', 'red_glazed_terracotta']].map(([s, p, i], n) => `<div class="cc glass spot rv" style="--d:${n * 60}ms"><h3>${ico(i)}${s}</h3><div class="kv"><span>Precio</span><span>${p}</span></div></div>`).join('')}</div>`, '03') + fichas('mundo');
+    table($('#mn', el), [{ k: 'minion', l: 'Minion' }, { k: 'n1', l: 'Nivel 1' }, { k: 'n10', l: 'Nivel 10' }, { k: 'coste', l: 'Coste total', t: 'bar' }], D.minions, { sort: 'coste', name: 'minions' });
+  },
+};
+
+// ---------- gráfico de playtime con tooltip
+function chartPlaytime(box) {
+  const P = D.playtime, W = 960, H = 280, L = 52, R = 18, T = 18, Bm = 34;
+  const mx = Math.max(...P.map(p => p.horas || 0)), x = i => L + i * (W - L - R) / (P.length - 1), y = h => H - Bm - (h / mx) * (H - Bm - T);
+  const pts = P.map((p, i) => [x(i), y(p.horas || 0)]);
+  const d = 'M' + pts.map(p => p.map(n => n.toFixed(1)).join(',')).join(' L');
+  let len = 0; for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+  box.innerHTML = `<div class="chart-wrap"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Horas necesarias por nivel de playtime" style="--len:${Math.ceil(len)}">
+    <defs><linearGradient id="lg" x1="0" x2="1"><stop offset="0" stop-color="#0081B9"/><stop offset=".7" stop-color="#5FC8FF"/><stop offset="1" stop-color="#ffc94a"/></linearGradient>
+    <linearGradient id="ag" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="rgba(0,178,255,.32)"/><stop offset="1" stop-color="rgba(0,178,255,0)"/></linearGradient></defs>
+    <g class="gl">${[0, .25, .5, .75, 1].map(f => `<line x1="${L}" x2="${W - R}" y1="${y(mx * f)}" y2="${y(mx * f)}"/>`).join('')}</g>
+    <g>${[0, .25, .5, .75, 1].map(f => `<text x="${L - 10}" y="${y(mx * f) + 4}" text-anchor="end">${Math.round(mx * f)} h</text>`).join('')}${[1, 25, 50, 75, P.length].map(n => `<text x="${x(n - 1)}" y="${H - 10}" text-anchor="middle">nv ${P[n - 1] ? P[n - 1].nivel : n}</text>`).join('')}</g>
+    <path class="ar" d="${d} L${x(P.length - 1)},${H - Bm} L${L},${H - Bm} Z" fill="url(#ag)"/>
+    <path class="ln" d="${d}"/>
+    <circle cx="${pts[pts.length - 1][0]}" cy="${pts[pts.length - 1][1]}" r="5" fill="#ffc94a"><animate attributeName="r" values="5;8;5" dur="2s" repeatCount="indefinite"/></circle>
+    <g class="cross"><line class="cx" y1="${T}" y2="${H - Bm}" stroke="rgba(161,216,255,.4)" stroke-dasharray="3 4"/><circle class="cd" r="6" fill="#05090e" stroke="#5FC8FF" stroke-width="2.5"/></g>
+    <rect class="hit" x="${L}" y="0" width="${W - L - R}" height="${H}" fill="transparent"/></svg><div class="ctip"></div></div>`;
+  const svg = $('svg', box), tip = $('.ctip', box), cx = $('.cx', box), cd = $('.cd', box), wrap = $('.chart-wrap', box);
+  const move = e => {
+    const r = svg.getBoundingClientRect(), px = (e.clientX - r.left) / r.width * W;
+    const i = Math.max(0, Math.min(P.length - 1, Math.round((px - L) / (W - L - R) * (P.length - 1)))), p = P[i];
+    cx.setAttribute('x1', pts[i][0]); cx.setAttribute('x2', pts[i][0]); cd.setAttribute('cx', pts[i][0]); cd.setAttribute('cy', pts[i][1]);
+    tip.innerHTML = `<b>Nivel ${p.nivel}</b><div><span>Horas</span><span>${fmt(p.horas)}</span></div><div><span>Dinero</span><span>${fmt(p.dinero)}</span></div><div><span>MobCoins</span><span>${fmt(p.mobcoins)}</span></div><div><span>Niveles de XP</span><span>${fmt(p.exp)}</span></div>${p.extras ? `<div><span>Extras</span><span>${esc(p.extras)}</span></div>` : ''}`;
+    const wr = wrap.getBoundingClientRect(); tip.style.left = Math.max(80, Math.min(wr.width - 80, pts[i][0] / W * wr.width)) + 'px'; tip.style.top = (pts[i][1] / H * wr.height) + 'px';
+  };
+  svg.addEventListener('pointermove', move); svg.addEventListener('pointerdown', move);
+}
+
+// ---------- hero: campo de píxeles + parallax
+function heroFx(hero) {
+  const cv = $('canvas', hero), ctx = cv.getContext('2d'); let w = 0, h = 0, cols = 0, rows = 0, S = 26, tx = -999, ty = -999, mx = -999, my = -999, t = 0, raf = 0, vis = false, seeds;
+  function size() {
+    const dpr = Math.min(devicePixelRatio || 1, 2), r = hero.getBoundingClientRect(); w = r.width; h = r.height;
+    cv.width = w * dpr; cv.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); cols = Math.ceil(w / S) + 1; rows = Math.ceil(h / S) + 1;
+    seeds = new Float32Array(cols * rows).map(() => Math.random()); if (RM) frame();
+  }
+  function frame() {
+    t += .016; mx += (tx - mx) * .12; my += (ty - my) * .12; ctx.clearRect(0, 0, w, h);
+    for (let yy = 0; yy < rows; yy++) for (let xx = 0; xx < cols; xx++) {
+      const px = xx * S, py = yy * S, sd = seeds[yy * cols + xx];
+      const dx = px - mx, dy = py - my, dd = Math.sqrt(dx * dx + dy * dy), m = Math.max(0, 1 - dd / 240);
+      const wave = (Math.sin(xx * .32 + t * 1.1) + Math.sin(yy * .41 - t * .8) + Math.sin((xx + yy) * .16 + t * .5)) / 3;
+      const fadeY = Math.min(1, py / (h * .25)) * Math.min(1, (h - py) / (h * .45));
+      let a = (.05 + .11 * (wave + 1) / 2) * fadeY + m * m * .8, s = 1.6 + m * 7 + (wave + 1) * .4;
+      if (sd > .992) { const pulse = (Math.sin(t * 2 + sd * 100) + 1) / 2; ctx.fillStyle = `rgba(255,201,74,${(.15 + pulse * .6) * fadeY})`; s += pulse * 2; }
+      else ctx.fillStyle = `rgba(${m > .3 ? '95,200,255' : '0,178,255'},${a.toFixed(3)})`;
+      ctx.fillRect(px - s / 2, py - s / 2, s, s);
+    }
+    if (!RM && vis && !document.hidden) raf = requestAnimationFrame(frame);
+  }
+  const start = () => { cancelAnimationFrame(raf); if (!RM) raf = requestAnimationFrame(frame); };
+  new IntersectionObserver(es => { vis = es[0].isIntersecting; vis ? start() : cancelAnimationFrame(raf); }).observe(hero);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && vis) start(); });
+  new ResizeObserver(size).observe(hero);
+  hero.addEventListener('pointermove', e => {
+    const r = hero.getBoundingClientRect(); tx = e.clientX - r.left; ty = e.clientY - r.top;
+    hero.querySelectorAll('.float').forEach(f => { f.style.setProperty('--px', ((e.clientX - r.left) / r.width - .5).toFixed(3)); f.style.setProperty('--py', ((e.clientY - r.top) / r.height - .5).toFixed(3)); });
+  }, { passive: true });
+  hero.addEventListener('pointerleave', () => { tx = ty = -999; });
+}
+
+// ---------- router
+const built = {}; let current = null;
+function show(id) {
+  if (!B[id]) id = 'inicio';
+  if (current === id) return;
+  const first = current === null;
+  const run = () => {
+    $$('.view', main).forEach(v => { const on = v.id === 'v-' + id; v.classList.toggle('on', on); if (!on) v.classList.remove('ent'); });
+    if (!built[id]) { const v = document.createElement('section'); v.className = 'view on'; v.id = 'v-' + id; v.setAttribute('aria-label', VI[id].t); main.appendChild(v); B[id](v); v.insertAdjacentHTML('beforeend', footer()); hydrate(v); built[id] = v; }
+    const v = built[id]; v.classList.remove('ent');
+    requestAnimationFrame(() => requestAnimationFrame(() => v.classList.add('ent')));
+    reveal(v);
+    $$('a', nav).forEach(a => { const on = a.dataset.v === id; a.classList.toggle('on', on); on ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'); });
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    document.title = id === 'inicio' ? 'DOCMETRY | EDERUS' : VI[id].t + ' · DOCMETRY | EDERUS';
+  };
+  current = id;
+  if (!first && document.startViewTransition && !RM) document.startViewTransition(run); else run();
+}
+function route() {
+  const h = decodeURIComponent(location.hash.slice(1));
+  const [path, q] = h.split('--'); const [v, id] = path.split('/');
+  closeDrawer(); show(v || 'inicio'); closeNav();
+  if (id && FIND[v]) { const [list, fn] = FIND[v]; const it = list().find(x => String(x.id) === id); if (it) setTimeout(() => fn(it), first ? 300 : 120); }
+  if (q) setTimeout(() => { const tb = built[v] && $('#tb', built[v]); if (tb && tb.setFilter) { tb.setFilter(q); tb.scrollIntoView({ block: 'start', behavior: 'smooth' }); } }, 220);
+  first = false;
+}
+let first = true;
+window.addEventListener('hashchange', route);
+
+// ---------- menú móvil
+const mb = $('#mbtn');
+const closeNav = () => { nav.classList.remove('show'); mb.setAttribute('aria-expanded', 'false'); document.body.style.overflow = ''; };
+mb.addEventListener('click', () => { const s = nav.classList.toggle('show'); mb.setAttribute('aria-expanded', s); document.body.style.overflow = s ? 'hidden' : ''; });
+nav.addEventListener('click', e => { if (e.target.closest('a')) closeNav(); });
+
+// ---------- buscador global (paleta)
+const IDX = [...D.armaduras.map(s => ({ t: s.nombre, s: 'Armadura · ' + s.origen + ' · ' + NF.format(s.poder), v: 'tl-armaduras/' + s.id, i: ico(s.icon, s.dye), g: 'Armaduras', w: 6 })),
+  ...D.armas.map(a => ({ t: a.nombre, s: 'Arma · ' + a.clase + ' · ' + NF.format(a.poder), v: 'tl-armas/' + a.id, i: ico(a.icon), g: 'Armas', w: 5 })),
+  ...D.anomalias.map(a => ({ t: a.nombre, s: 'Anomalía · ' + a.clase, v: 'tl-anomalias/' + a.id, i: face(a), g: 'Anomalías', w: 6 })),
+  ...D.premios.map(p => ({ t: p.premio, s: 'Premio · Caja ' + p.caja + ' · ' + NF.format(p.pct) + ' %', v: 'cajas', i: ico('tripwire_hook'), f: p.premio, g: 'Premios', w: 2 })),
+  ...D.encantamientos.map(e => ({ t: e.nombre, s: 'Encantamiento · ' + e.tier + ' · ' + e.para, v: 'encantamientos', i: ico('enchanted_book'), f: e.nombre, g: 'Encantamientos', w: 3 })),
+  ...D.jefes.map(j => ({ t: j.mob, s: 'Mob de mazmorra · ' + NF.format(j.vida) + ' de vida', v: 'mazmorras', i: mobFace(j), f: j.mob, g: 'Mazmorras', w: 3 })),
+  ...D.mascotas.map(m => ({ t: m.mascota, s: 'Mascota · ' + (m.fuente || ''), v: 'mascotas', i: ico(m.icon), f: m.mascota, g: 'Mascotas', w: 2 })),
+  ...D.tags.map(t => ({ t: t.tag, s: 'Tag · ' + t.categoria, v: 'tags', i: ico('name_tag'), f: t.tag, g: 'Tags', w: 1 })),
+  ...D.mc_tiendas.map(t => ({ t: t.articulo, s: t.tienda + ' · ' + NF.format(t.precio) + ' MC', v: 'economia', i: ico('sunflower'), f: t.articulo, g: 'Tiendas de MobCoins', w: 1 })),
+  ...VIEWS.map(v => ({ t: v.t, s: 'Sección' + (v.d ? ' · ' + v.d : ''), v: v.id, i: ico(v.ic), g: 'Secciones', w: 9 }))].map(e => ({ ...e, n: norm(e.t + ' ' + e.s), nt: norm(e.t) }));
+const pal = $('#pal'), q = $('#q'), res = $('#res'); let hits = [], sel = 0, palBack = null;
+function openPal(pre = '') { palBack = document.activeElement; pal.classList.add('on'); q.value = pre; search(); setTimeout(() => q.focus(), 30); }
+function closePal() { pal.classList.remove('on'); if (palBack && palBack.focus) palBack.focus({ preventScroll: true }); }
+function search() {
+  const v = norm(q.value.trim()); sel = 0;
+  if (v.length < 2) {
+    const sug = ['Veyra', 'Llave Legendaria', 'Vampiro', 'Monarch', 'Quimera', 'Elytra'];
+    hits = IDX.filter(e => e.g === 'Secciones');
+    res.innerHTML = `<div class="pal__grp">Prueba con</div><div class="pal__sug">${sug.map(s => `<button type="button" class="tg plain" data-s="${esc(s)}">${esc(s)}</button>`).join('')}</div><div class="pal__grp">Secciones</div>` + hits.map((h, i) => item(h, i)).join('');
+    hydrate(res); mark(); return;
+  }
+  const ts = v.split(/\s+/), re = mkRe(ts[0]);
+  hits = IDX.filter(e => ts.every(t => e.n.includes(t))).map(e => ({ e, sc: (e.nt === v ? 100 : 0) + (e.nt.startsWith(ts[0]) ? 30 : 0) + (e.nt.includes(v) ? 10 : 0) + e.w })).sort((a, b) => b.sc - a.sc).slice(0, 50).map(x => x.e);
+  if (!hits.length) { res.innerHTML = `<div class="pal__empty">Sin resultados para “${esc(q.value)}”. Prueba con otra palabra.</div>`; return; }
+  const groups = []; hits.forEach(h => { let g = groups.find(x => x.g === h.g); if (!g) groups.push(g = { g: h.g, l: [] }); g.l.push(h); });
+  hits = groups.flatMap(g => g.l);
+  let i = 0; res.innerHTML = groups.map(g => `<div class="pal__grp">${esc(g.g)} · ${g.l.length}</div>` + g.l.map(h => item(h, i++, re)).join('')).join('');
+  hydrate(res); mark();
+}
+const item = (h, i, re) => `<a role="option" data-i="${i}" href="#${h.v}">${h.i}<span><b>${hl(h.t, re)}</b><small>${esc(h.s)}</small></span><span class="go">Abrir ↵</span></a>`;
+function mark() { $$('a[data-i]', res).forEach((a, i) => { a.classList.toggle('sel', i === sel); a.setAttribute('aria-selected', i === sel); if (i === sel) a.scrollIntoView({ block: 'nearest' }); }); }
+function pick(h) {
+  closePal(); if (!h) return;
+  const [view] = h.v.split('/');
+  if (location.hash.slice(1) === h.v) route(); else location.hash = h.v;
+  if (h.f) setTimeout(() => { const tb = built[view] && $('#tb', built[view]); if (tb && tb.setFilter) { tb.setFilter(h.f); tb.scrollIntoView({ block: 'start', behavior: 'smooth' }); } }, 180);
+}
+q.addEventListener('input', search);
+q.addEventListener('keydown', e => {
+  const n = $$('a[data-i]', res).length;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (n) { sel = (sel + (e.key === 'ArrowDown' ? 1 : -1) + n) % n; mark(); } }
+  if (e.key === 'Enter') { e.preventDefault(); pick(hits[sel]); }
+});
+res.addEventListener('click', e => {
+  const s = e.target.closest('[data-s]'); if (s) { q.value = s.dataset.s; search(); q.focus(); return; }
+  const a = e.target.closest('a[data-i]'); if (!a) return; e.preventDefault(); pick(hits[+a.dataset.i]);
+});
+res.addEventListener('mousemove', e => { const a = e.target.closest('a[data-i]'); if (a && +a.dataset.i !== sel) { sel = +a.dataset.i; mark(); } });
+pal.addEventListener('click', e => { if (e.target === pal) closePal(); });
+$('#qbtn').addEventListener('click', () => openPal());
+$('#kbdk').textContent = MAC ? '⌘ K' : 'Ctrl K';
+document.addEventListener('click', e => { if (e.target.closest('[data-open-search]')) { e.preventDefault(); openPal(); } });
+
+// ---------- teclado global
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); pal.classList.contains('on') ? closePal() : openPal(); return; }
+  if (e.key === 'Escape') { if (pal.classList.contains('on')) closePal(); else if (cmpEl.classList.contains('on')) closeCmp(); else if (dr.classList.contains('on')) closeDrawer(); else closeNav(); return; }
+  if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { e.preventDefault(); openPal(); }
+});
+
+// ---------- scroll: progreso + volver arriba
+const prog = $('#prog'), totop = $('#totop'); let ticking = false;
+addEventListener('scroll', () => {
+  if (ticking) return; ticking = true;
+  requestAnimationFrame(() => { const m = document.documentElement.scrollHeight - innerHeight; prog.style.setProperty('--p', m > 0 ? (scrollY / m).toFixed(4) : 0); totop.classList.toggle('on', scrollY > 700); ticking = false; });
+}, { passive: true });
+totop.addEventListener('click', () => scrollTo({ top: 0, behavior: RM ? 'auto' : 'smooth' }));
+
+// ---------- arranque
+const intro = $('#intro');
+let seen = false; try { seen = sessionStorage.getItem('dm-intro') === '1'; sessionStorage.setItem('dm-intro', '1'); } catch (e) { /* sin almacenamiento */ }
+route();
+const ready = () => { document.body.classList.add('ready'); intro.classList.add('out'); setTimeout(() => intro.remove(), 900); };
+if (seen || RM || (location.hash && location.hash !== '#inicio')) { intro.style.transition = 'none'; ready(); } else setTimeout(ready, 1250);
+})();
