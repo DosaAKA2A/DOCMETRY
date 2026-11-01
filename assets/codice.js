@@ -492,7 +492,7 @@ const B = {
   },
   mazmorras(el) {
     const top = [...D.jefes].sort((a, b) => b.vida - a.vida);
-    el.innerHTML = head('mazmorras', 'Jefes y tropa de mazmorra', 'Mobs de MythicMobs (Mazmorra del Dragón, Artoria, Culto, Juicio Final). Dungeons está en dificultad Difícil.', [['Mobs', D.jefes.length], ['Más vida', `${esc(top[0].mob)} · ${fmt(top[0].vida)}`]]) + '<div id="tb" class="rv"></div>' + fichas('mazmorras');
+    el.innerHTML = head('mazmorras', 'Jefes y tropa de mazmorra', 'Mobs de MythicMobs (Mazmorra del Dragón, Artoria y Culto). Dungeons está en dificultad Difícil.', [['Mobs', D.jefes.length], ['Más vida', `${esc(top[0].mob)} · ${fmt(top[0].vida)}`]]) + '<div id="tb" class="rv"></div>' + fichas('mazmorras');
     table($('#tb', el), [{ k: 'mob', l: 'Mob', render: (r, re) => `<span class="row">${mobFace(r)}<b>${hl(r.mob, re)}</b></span>` }, { k: 'vida', l: 'Vida', t: 'bar' }, { k: 'dano', l: 'Daño', t: 'num' }, { k: 'armadura', l: 'Armadura', t: 'num' }, { k: 'habilidades', l: 'Habilidades', t: 'num' }, { k: 'fichero', l: 'Grupo' }], D.jefes, { filters: ['fichero'], sort: 'vida', name: 'mazmorras' });
   },
   mascotas(el) {
