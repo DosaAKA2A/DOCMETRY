@@ -20,7 +20,8 @@ const norm = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLow
 const AC = { a: 'aáàäâ', e: 'eéèëê', i: 'iíìïî', o: 'oóòöô', u: 'uúùüû', n: 'nñ', c: 'cç' };
 const mkRe = q => q ? new RegExp('(' + [...q].map(ch => AC[ch] ? `[${AC[ch]}]` : ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('') + ')', 'i') : null;
 const hl = (raw, re) => { raw = String(raw ?? ''); if (!re) return esc(raw); return raw.split(re).map((p, i) => i % 2 ? `<mark>${esc(p)}</mark>` : esc(p)).join(''); };
-const TC = { EX: '#c58cff', S: '#ff6b6b', A: '#ffb454', B: '#4ade80', C: '#5FC8FF', D: '#8fa6bd' };
+// colores de tier: salen de la paleta de codice.css (:root)
+const TC = { EX: 'var(--tc-ex)', S: 'var(--tc-s)', A: 'var(--tc-a)', B: 'var(--tc-b)', C: 'var(--tc-c)', D: 'var(--tc-d)' };
 const TORD = { EX: 6, S: 5, A: 4, B: 3, C: 2, D: 1 };
 const max = (arr, k) => Math.max(...arr.map(r => +r[k] || 0), 1);
 
@@ -534,7 +535,7 @@ const B = {
   },
   combate(el) {
     const rows = [['Zombi', 3, .25, .24, .12], ['Élite de horda (zombi ×1,8)', 5.4, .49, .47, .22], ['Esqueleto', 4, .35, .33, .16], ['Creeper a bocajarro', 43, 9.75, 8.42, 1.72], ['Piglin / wither del Nether', 5, .45, .43, .2], ['Élite del Nether', 9, .94, .88, .36], ['Ahogado de la Marea (pesca)', 14, '2,4*', '2,4*', '2,4*'], ['Zombi en Dungeons', 4.5, .4, .38, .18]];
-    const heat = v => typeof v !== 'number' ? '' : ` style="background:rgba(255,107,107,${Math.min(.5, v / 20 * .5 + .03).toFixed(3)})"`;
+    const heat = v => typeof v !== 'number' ? '' : ` style="background:color-mix(in srgb,var(--tc-s) ${(Math.min(.5, v / 20 * .5 + .03) * 100).toFixed(1)}%,transparent)"`;
     el.innerHTML = head('combate', 'Dificultad y hordas', 'Cuánto pega cada cosa con cada armadura. Overworld en Normal, Nether en Fácil, Dungeons en Difícil.', [['Overworld', 'Normal'], ['Nether', 'Fácil'], ['Dungeons', 'Difícil']]) +
       `<div class="rv"><div class="tw" style="max-height:none"><table><thead><tr><th style="cursor:default">Golpe</th><th class="num" style="cursor:default">Sin armadura</th><th class="num" style="cursor:default">Diamante Prot IV</th><th class="num" style="cursor:default">Netherita Prot IV</th><th class="num" style="cursor:default">Armadura al tope</th></tr></thead><tbody>${rows.map(r => `<tr>${r.map((c, i) => i ? `<td class="num"${heat(c)}><b>${fmt(c)}</b></td>` : `<td><b>${esc(c)}</b></td>`).join('')}</tr>`).join('')}</tbody></table></div></div>
       <p class="note rv">Daño que llega al jugador (20 de vida = 10 corazones). El color se intensifica cuanto más pega. * La pesca extrema quita como mínimo el 12 % de tu vida por golpe.</p>` + fichas('combate');
@@ -547,7 +548,7 @@ const B = {
     $$('[data-id]', el).forEach(b => b.addEventListener('click', () => setDetail(sets.find(s => s.id === b.dataset.id))));
   },
   mundo(el) {
-    const C = { Piedra: '#8a8f98', Hierro: '#d8c3a5', Carbón: '#3b3f46', Oro: '#f2c14e', Redstone: '#e2483f', Lapislázuli: '#3c5fd1', Diamante: '#5fe3d6', Esmeralda: '#41c46b', Escombros: '#7a5440' };
+    const C = { Piedra: 'var(--min-piedra)', Hierro: 'var(--min-hierro)', Carbón: 'var(--min-carbon)', Oro: 'var(--min-oro)', Redstone: 'var(--min-redstone)', Lapislázuli: 'var(--min-lapis)', Diamante: 'var(--min-diamante)', Esmeralda: 'var(--min-esmeralda)', Escombros: 'var(--min-escombros)' };
     el.innerHTML = head('mundo', 'Mundo y servicios', 'Minions, protecciones, minas, spawners y otros servicios.', [['Minas', D.minas.length], ['Minions', D.minions.length]]) +
       sect('Minas (lo que sale al picar)', `<div class="cards">${D.minas.map((m, n) => `<div class="cc glass spot rv" style="--d:${n * 80}ms"><h3>${esc(m.mina)}</h3><div class="mlabel"><span>Se rellena cada</span><b>${esc(m.reinicio)}</b></div><div class="stack">${Object.entries(m.comp).map(([k, v], i) => `<span style="--w:${v}%;--i:${i};background:${C[k]}" title="${k} ${fmt(v)} %">${v >= 6 ? fmt(Math.round(v)) + '%' : ''}</span>`).join('')}</div><div class="kv">${Object.entries(m.comp).map(([k, v]) => `<span>${k}</span><span>${fmt(v)} %</span>`).join('')}</div></div>`).join('')}</div><div class="legend rv">${Object.entries(C).map(([k, v]) => `<span><b style="background:${v}"></b>${k}</span>`).join('')}</div>`, '01') +
       sect('Minions: coste de subir al nivel 10', '<div id="mn" class="rv"></div>', '02') +
@@ -564,14 +565,14 @@ function chartPlaytime(box) {
   const d = 'M' + pts.map(p => p.map(n => n.toFixed(1)).join(',')).join(' L');
   let len = 0; for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
   box.innerHTML = `<div class="chart-wrap"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Horas necesarias por nivel de playtime" style="--len:${Math.ceil(len)}">
-    <defs><linearGradient id="lg" x1="0" x2="1"><stop offset="0" stop-color="#0081B9"/><stop offset=".7" stop-color="#5FC8FF"/><stop offset="1" stop-color="#ffc94a"/></linearGradient>
-    <linearGradient id="ag" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="rgba(0,178,255,.32)"/><stop offset="1" stop-color="rgba(0,178,255,0)"/></linearGradient></defs>
+    <defs><linearGradient id="lg" x1="0" x2="1"><stop offset="0" style="stop-color:var(--graf-a)"/><stop offset=".7" style="stop-color:var(--graf-b)"/><stop offset="1" style="stop-color:var(--graf-c)"/></linearGradient>
+    <linearGradient id="ag" x1="0" x2="0" y1="0" y2="1"><stop offset="0" style="stop-color:var(--az);stop-opacity:.32"/><stop offset="1" style="stop-color:var(--az);stop-opacity:0"/></linearGradient></defs>
     <g class="gl">${[0, .25, .5, .75, 1].map(f => `<line x1="${L}" x2="${W - R}" y1="${y(mx * f)}" y2="${y(mx * f)}"/>`).join('')}</g>
     <g>${[0, .25, .5, .75, 1].map(f => `<text x="${L - 10}" y="${y(mx * f) + 4}" text-anchor="end">${Math.round(mx * f)} h</text>`).join('')}${[1, 25, 50, 75, P.length].map(n => `<text x="${x(n - 1)}" y="${H - 10}" text-anchor="middle">nv ${P[n - 1] ? P[n - 1].nivel : n}</text>`).join('')}</g>
     <path class="ar" d="${d} L${x(P.length - 1)},${H - Bm} L${L},${H - Bm} Z" fill="url(#ag)"/>
     <path class="ln" d="${d}"/>
-    <circle cx="${pts[pts.length - 1][0]}" cy="${pts[pts.length - 1][1]}" r="5" fill="#ffc94a"><animate attributeName="r" values="5;8;5" dur="2s" repeatCount="indefinite"/></circle>
-    <g class="cross"><line class="cx" y1="${T}" y2="${H - Bm}" stroke="rgba(161,216,255,.4)" stroke-dasharray="3 4"/><circle class="cd" r="6" fill="#05090e" stroke="#5FC8FF" stroke-width="2.5"/></g>
+    <circle cx="${pts[pts.length - 1][0]}" cy="${pts[pts.length - 1][1]}" r="5" style="fill:var(--graf-c)"><animate attributeName="r" values="5;8;5" dur="2s" repeatCount="indefinite"/></circle>
+    <g class="cross"><line class="cx" y1="${T}" y2="${H - Bm}" style="stroke:var(--graf-guia);stroke-opacity:.4" stroke-dasharray="3 4"/><circle class="cd" r="6" style="fill:var(--graf-fondo);stroke:var(--graf-b)" stroke-width="2.5"/></g>
     <rect class="hit" x="${L}" y="0" width="${W - L - R}" height="${H}" fill="transparent"/></svg><div class="ctip"></div></div>`;
   const svg = $('svg', box), tip = $('.ctip', box), cx = $('.cx', box), cd = $('.cd', box), wrap = $('.chart-wrap', box);
   const move = e => {
