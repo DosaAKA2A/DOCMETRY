@@ -19,7 +19,7 @@
   color-scheme:dark;
 }
 *,*::before,*::after{box-sizing:border-box}
-html{background:var(--obs);-webkit-text-size-adjust:100%;scrollbar-color:var(--stone-2) var(--obs);scrollbar-width:thin}
+html{background:var(--obs);-webkit-text-size-adjust:100%;scrollbar-color:var(--stone-2) var(--obs);scrollbar-width:thin;scrollbar-gutter:stable}
 body{margin:0;min-height:100vh;background:var(--obs);color:var(--ink);font:400 15.5px/1.55 var(--f-body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 ::selection{background:var(--az);color:#000}
 a{color:inherit}button{font:inherit;color:inherit}img{max-width:100%}
@@ -439,11 +439,13 @@ table.mx{width:100%;border-collapse:separate;border-spacing:0;font-size:15px;min
 .note a{color:var(--az)}
 
 /* ---------- ficha: panel con estilo de tooltip ---------- */
-.scrim{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.6);opacity:0;visibility:hidden;transition:opacity .2s steps(3,end),visibility .2s}
+.scrim{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.6);opacity:0;visibility:hidden;transition:opacity .12s steps(2,end),visibility .12s}
 .scrim.on{opacity:1;visibility:visible}
 .dr{--c:var(--az);position:fixed;top:0;right:0;bottom:0;z-index:90;width:min(520px,100%);display:flex;flex-direction:column;background:#120818;
-  box-shadow:inset 0 0 0 3px var(--tip-b1),inset 0 0 0 6px var(--tip-b2),-20px 0 60px rgba(0,0,0,.6);transform:translateX(104%);transition:transform .35s steps(7,end);visibility:hidden}
-.dr.on{transform:none;visibility:visible}
+  box-shadow:inset 0 0 0 3px var(--tip-b1),inset 0 0 0 6px var(--tip-b2),-20px 0 60px rgba(0,0,0,.6);transform:translateX(104%);transition:transform .18s steps(4,end),visibility 0s .18s;visibility:hidden;will-change:transform;contain:layout paint}
+.dr.on{transform:none;visibility:visible;transition:transform .18s steps(4,end),visibility 0s}
+/* con la ficha abierta, el fondo deja de animarse (los contornos EX repintaban filtros sin parar) */
+html.dr-open .glint,html.dr-open .tt .slot.glint .ic,html.dr-open .tt .slot.glint .face,html.dr-open .marquee__track{animation-play-state:paused}
 .dr.wide{width:min(900px,100%)}
 .dr__hero{padding:22px 26px 20px;border-bottom:2px solid var(--tip-b2);margin:6px 6px 0}
 .dr__bar{display:flex;align-items:center;gap:8px;margin-bottom:18px}
@@ -465,7 +467,7 @@ table.mx{width:100%;border-collapse:separate;border-spacing:0;font-size:15px;min
 .sb__l b{color:#fff;font-weight:800}
 .sb__l small{color:var(--muted);font:400 9px var(--f-px);margin-left:8px}
 .sb__t{height:14px;background:#08070b;border:2px solid;border-color:#08070b #3e3a49 #3e3a49 #08070b}
-.sb__t i{display:block;height:100%;background:var(--c);box-shadow:inset 0 -4px 0 rgba(0,0,0,.3);transform-origin:left;animation:grow .6s steps(10,end) both;animation-delay:calc(var(--i)*90ms + 250ms)}
+.sb__t i{display:block;height:100%;background:var(--c);box-shadow:inset 0 -4px 0 rgba(0,0,0,.3);transform-origin:left;animation:grow .35s steps(6,end) both;animation-delay:calc(var(--i)*50ms + 100ms)}
 .dkv{border-radius:var(--r);overflow:hidden;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:2px solid var(--tip-b2);border-bottom:0}
 .dkv>div{padding:11px 14px;display:grid;gap:4px;border-bottom:2px solid var(--tip-b2)}
 .dkv>div:nth-child(odd){border-right:2px solid var(--tip-b2)}

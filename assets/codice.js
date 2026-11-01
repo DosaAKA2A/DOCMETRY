@@ -304,7 +304,7 @@ function openDrawer(o) {
     ${o.kv && o.kv.length ? `<div><h4>Ficha</h4><div class="dkv">${o.kv.map(([k, v]) => `<div><span>${esc(k)}</span><b>${v}</b></div>`).join('')}</div></div>` : ''}${o.extra || ''}</div>`;
   hydrate(dr);
   dr.classList.add('on'); scrim.classList.add('on'); dr.scrollTop = 0; $('.dr__body', dr).scrollTop = 0;
-  document.documentElement.style.overflow = 'hidden';
+  document.documentElement.style.overflow = 'hidden'; document.documentElement.classList.add('dr-open');
   $('.dr__x', dr).onclick = closeDrawer;
   const l = $('[data-act=link]', dr); if (l) l.onclick = () => { const u = location.href.split('#')[0] + '#' + o.link; (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(() => toast('Enlace copiado'), () => prompt('Copia el enlace:', u)); };
   const c = $('[data-act=cmp]', dr); if (c) c.onclick = () => { cmpAdd(o.compare); c.innerHTML = SVG.cmp + 'En el comparador'; };
@@ -313,7 +313,7 @@ function openDrawer(o) {
 }
 function closeDrawer() {
   if (!dr.classList.contains('on')) return;
-  dr.classList.remove('on'); scrim.classList.remove('on'); document.documentElement.style.overflow = '';
+  dr.classList.remove('on'); scrim.classList.remove('on'); document.documentElement.style.overflow = ''; document.documentElement.classList.remove('dr-open');
   if (drView && location.hash.includes('/')) history.replaceState(null, '', '#' + drView);
   drView = null; if (drBack && drBack.focus) drBack.focus({ preventScroll: true });
 }
