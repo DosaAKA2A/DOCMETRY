@@ -414,7 +414,7 @@ function answers() {
 const tierStats = (list, tiers) => tiers.map(t => [`Tier ${t}`, list.filter(x => x.tier === t).length]).filter(x => x[1]);
 const B = {
   inicio(el) {
-    const topA = [...D.armaduras].sort((a, b) => b.poder - a.poder), topW = [...D.armas].sort((a, b) => b.poder - a.poder), topN = [...D.anomalias].sort((a, b) => b.dificultad - a.dificultad);
+    const topA = [...D.armaduras].sort((a, b) => b.poder - a.poder), topW = [...D.armas].sort((a, b) => (b.tier === 'EX') - (a.tier === 'EX') || b.poder - a.poder), topN = [...D.anomalias].sort((a, b) => b.dificultad - a.dificultad);
         const total = D.armaduras.length + D.armas.length + D.anomalias.length + D.premios.length + D.encantamientos.length + D.mascotas.length + D.tags.length + D.jefes.length;
     const word = [...'EDERUSDEX'].map((ch, i) => `<span style="--i:${i}"${i > 5 ? ' class="az"' : ''}>${ch}</span>`).join('');
     const slot = (kind, it, art, v) => `<button type="button" class="slot${it.tier === 'EX' ? ' glint' : ''}" data-tip="${kind}:${esc(it.id)}" data-go="${v}/${esc(it.id)}" aria-label="${esc(it.nombre)}, tier ${it.tier}">${art}<span class="q">${it.tier}</span></button>`;
