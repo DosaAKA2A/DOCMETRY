@@ -685,7 +685,7 @@ main{view-transition-name:main-view}
 .book dd{margin:0;color:var(--gold);font:700 12.5px var(--f-body);white-space:nowrap}
 
 /* ---------- Calamity: lo esencial, categorías y temas (tools/importar_calamity.py) ---------- */
-.calx-ess{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 22px}
+.calx-ess{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 22px}
 .calx-ess__i{display:flex;gap:14px;align-items:flex-start;padding:16px;background:var(--obs-2);border:1px solid var(--stone);border-top:4px solid var(--cal-sangre);border-radius:var(--r)}
 .calx-ess__i .ic{width:34px;height:34px;flex:none}
 .calx-ess__i b{display:block;font:900 21px/1 var(--f-head);font-stretch:70%;text-transform:uppercase;margin-bottom:6px}
