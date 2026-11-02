@@ -157,15 +157,16 @@ h1,h2,h3,h4{font-family:var(--f-head);font-stretch:100%!important;letter-spacing
   background:radial-gradient(55% 140% at 100% 50%,rgba(var(--tinte),.26),transparent 72%),
              linear-gradient(98deg,transparent 52%,rgba(var(--tinte),.07) 58%,transparent 63% 70%,rgba(255,255,255,.035) 74%,transparent 79% 86%,rgba(var(--tinte),.06) 90%,transparent 95%)}
 .vh>*{position:relative}
-.vh__art{display:block;position:absolute!important;z-index:-1;right:0;top:0;bottom:0;width:min(46%,520px);pointer-events:none;
-  -webkit-mask-image:linear-gradient(90deg,transparent,#000 55%);mask-image:linear-gradient(90deg,transparent,#000 55%)}
-.vh__art img{position:absolute;image-rendering:pixelated;opacity:.22}
-.vh__art .a0{width:118px;right:52px;top:50%;transform:translateY(-50%) rotate(-12deg);opacity:.34}
-.vh__art .a1{width:66px;right:200px;top:14%;transform:rotate(14deg)}
-.vh__art .a2{width:74px;right:184px;bottom:10%;transform:rotate(-8deg)}
-.vh__art .a3{width:50px;right:300px;top:42%;transform:rotate(20deg);opacity:.16}
-.vh__art .a4{width:56px;right:14px;top:8%;transform:rotate(18deg);opacity:.18}
-.vh__art .a5{width:46px;right:22px;bottom:6%;transform:rotate(-16deg);opacity:.18}
+/* Dosa 02/11: un solo objeto protagonista, estilizado como una insignia de la tienda: disco con el color de la categoría,
+   anillo fino en degradado, el brillo por debajo del objeto y una sombra suave que lo despega */
+.vh{min-height:200px;padding-right:min(34%,300px)!important}
+.vh__art{display:block;position:absolute!important;z-index:-1;right:clamp(20px,4vw,64px);top:50%;width:190px;height:190px;transform:translateY(-50%);pointer-events:none}
+.vh__disco{position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle at 50% 42%,rgba(var(--tinte),.45),rgba(var(--tinte),.10) 58%,transparent 72%) padding-box,
+             linear-gradient(150deg,rgba(var(--tinte),.75),rgba(97,60,244,.25),rgba(235,134,249,.45)) border-box;
+  border:1px solid transparent;box-shadow:0 0 0 14px rgba(var(--tinte),.05),0 0 0 15px rgba(var(--tinte),.14)}
+.vh__obj{position:absolute;left:50%;top:50%;width:132px;height:132px;transform:translate(-50%,-52%) rotate(-12deg);image-rendering:pixelated;
+  filter:drop-shadow(0 10px 0 rgba(11,10,22,.45)) drop-shadow(0 18px 18px rgba(11,10,22,.55))}
 /* tinte de cada sección */
 .vh[data-v^="tl-"]{--tinte:97,60,244}
 .vh[data-v="cajas"],.vh[data-v="economia"],.vh[data-v="rangos"]{--tinte:255,201,74}
@@ -174,7 +175,7 @@ h1,h2,h3,h4{font-family:var(--f-head);font-stretch:100%!important;letter-spacing
 .vh[data-v="mascotas"],.vh[data-v="mundo"],.vh[data-v="progresion"]{--tinte:75,227,176}
 .vh[data-v="combate"],.vh[data-v="calamity"]{--tinte:226,72,63}
 .vh[data-v="pesca"]{--tinte:69,142,231}
-@media (max-width:760px){.vh__art{width:60%;opacity:.7}.vh__art .a3,.vh__art .a1{display:none}}
+@media (max-width:760px){.vh{padding-right:26px!important}.vh__art{width:120px;height:120px;right:12px;top:22px;transform:none;opacity:.55}.vh__obj{width:84px;height:84px}}
 /* los chips de tier conservan el color de su tier (no el degradado de la marca) */
 .tchip.on{background:var(--tc)!important;color:#0b0a16!important;border-color:var(--tc)!important}
 

@@ -173,7 +173,7 @@ const VH_ART = {
   'tl-anomalias': ['nether_star', 'ender_eye', 'echo_shard', 'wither_rose', 'dragon_breath', 'blaze_rod'],
   cajas: ['tripwire_hook', 'trial_key', 'ominous_trial_key', 'gold_ingot', 'emerald', 'diamond'],
   encantamientos: ['enchanted_book', 'experience_bottle', 'lapis_lazuli', 'book', 'amethyst_shard', 'glowstone_dust'],
-  mazmorras: ['trial_key', 'iron_sword', 'ominous_trial_key', 'heavy_core', 'netherite_scrap', 'totem_of_undying'],
+  mazmorras: ['ominous_trial_key', 'iron_sword', 'trial_key', 'heavy_core', 'netherite_scrap', 'totem_of_undying'],
   mascotas: ['bone', 'wolf_spawn_egg', 'cat_spawn_egg', 'allay_spawn_egg', 'cookie', 'lead'],
   tags: ['name_tag', 'paper', 'writable_book', 'oak_sign', 'feather', 'ink_sac'],
   economia: ['gold_ingot', 'emerald', 'gold_nugget', 'diamond', 'raw_gold', 'gold_block'],
@@ -186,7 +186,7 @@ const VH_ART = {
 };
 function head(id, title, p, stats = []) {
   const v = VI[id];
-  const art = (VH_ART[id] || []).map((ic, i) => `<img alt="" data-id="${ic}" class="a${i}">`).join('');
+  const art = (VH_ART[id] || []).slice(0, 1).map(ic => `<span class="vh__disco"></span><img alt="" data-id="${ic}" class="vh__obj">`).join('');
   return `<header class="vh" data-v="${id}"><div class="vh__art" aria-hidden="true">${art}</div><nav class="crumbs" aria-label="Migas"><a href="#inicio">EDERUSDEX</a><span>›</span><span>${esc(v.g)}</span><span>›</span><b>${esc(v.t)}</b><em class="upd">Actualizado 31/10/2026</em></nav><h1>${split(title)}</h1>${p ? `<p>${p}</p>` : ''}${stats.length ? `<div class="stats">${stats.map(([k, b]) => `<span class="chip"><i></i>${k} <b>${b}</b></span>`).join('')}</div>` : ''}</header>`;
 }
 function sect(title, inner, n, sub) {
