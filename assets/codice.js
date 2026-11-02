@@ -349,12 +349,14 @@ const RAR_T = { Común: 'D', 'Poco común': 'C', Raro: 'B', Épico: 'A', Legenda
 let PZX = null;
 function premioCelda(f, i) {
   return `<button type="button" class="pzc${f.r === 'Único' ? ' unico' : ''}" data-tip="p:${i}"${f.go ? ` data-go="${esc(f.go)}"` : ''}><span class="slot pzc__slot">${f.img ? `<span class="ic lg"><img alt="" src="${f.img}"></span>` : ico(f.ic, null, 1)}${f.q ? `<b class="pz__q">${esc(f.q)}</b>` : ''}</span>
-    <b class="pzc__n" style="${f.c ? `color:${f.c}` : ''}">${esc(f.n)}</b><span class="pzc__p">${fmt(f.p)} %</span></button>`;
+    <b class="pzc__n" style="${f.c ? `color:${f.c}` : ''}">${f.nh ? rt(f.nh) : esc(f.n)}</b><span class="pzc__p">${fmt(f.p)} %</span></button>`;
 }
+// texto original de Minecraft: tramos [texto, color, banderas] (1 negrita, 2 cursiva, 4 subrayado, 8 tachado)
+const rt = runs => (runs || []).map(([t, c, fl]) => { const st = (c ? `color:#${c};` : '') + (fl & 1 ? 'font-weight:700;' : '') + (fl & 2 ? 'font-style:italic;' : '') + (fl & 12 ? `text-decoration:${fl & 4 ? 'underline ' : ''}${fl & 8 ? 'line-through' : ''};` : ''); return st ? `<span style="${st}">${esc(t)}</span>` : esc(t); }).join('');
 function premioTip(f) {
   const lin = (cls, xs) => xs && xs.length ? xs.filter(x => String(x).trim()).map(x => `<span class="${cls}">${esc(x)}</span>`).join('') : '';
-  return `<span class="t" style="color:${f.c || 'var(--blanco)'}">${esc(f.n)}${f.q ? ` ×${esc(f.q)}` : ''}</span>${[f.t, f.r].filter(Boolean).length ? `<span class="sub">${[f.t, f.r].filter(Boolean).map(esc).join(' · ')}</span>` : ''}
-    ${lin('pt-e', f.e)}${f.st ? f.st.map(([k, v]) => r(k, v)).join('') : ''}${lin('pt-l', f.l)}${f.fl ? `<span class="pt-fl">«${esc(f.fl)}»</span>` : ''}
+  return `<span class="t" style="color:${f.c || 'var(--blanco)'}">${f.nh ? rt(f.nh) : esc(f.n)}${f.q ? ` ×${esc(f.q)}` : ''}</span>${[f.t, f.r].filter(Boolean).length ? `<span class="sub">${[f.t, f.r].filter(Boolean).map(esc).join(' · ')}</span>` : ''}
+    ${f.lh ? `<span class="pt-lore">${f.lh.map(l => `<span class="pt-lh">${l.length ? rt(l) : '&nbsp;'}</span>`).join('')}</span>` : lin('pt-l', f.l)}${lin('pt-e', f.e)}${f.st ? f.st.map(([k, v]) => r(k, v)).join('') : ''}${f.fl ? `<span class="pt-fl">«${esc(f.fl)}»</span>` : ''}
     ${f.in ? `<span class="pt-h">Trae</span>${f.in.map(([ic, q, n]) => `<span class="pt-in">${q && q !== '1' ? q + '× ' : ''}${esc(n || String(ic).replace(/_/g, ' '))}</span>`).join('')}` : ''}
     ${r('Probabilidad', fmt(f.p) + ' %')}${PZX && PZX.extra ? r('Por captura', PZX.extra(f)) : ''}${f.go ? '<span class="l">Clic para ver su ficha</span>' : ''}`;
 }

@@ -754,8 +754,10 @@ main{view-transition-name:main-view}
 .pzc[data-go] .pzc__p::after{content:" →";color:var(--az)}
 /* recuadro del premio (usa .mctip) */
 .mctip .pt-e{display:block;color:var(--mc-7)}
-.mctip .pt-l{display:block;color:var(--mc-d);font-style:italic;font-family:var(--f-body);font-size:12.5px;line-height:1.4}
+.mctip .pt-l{display:block;color:var(--mc-7)}
+.mctip .pt-lore{display:block;margin:4px 0 6px}
+.mctip .pt-lh{display:block;color:var(--mc-7);line-height:1.5}
 .mctip .pt-fl{display:block;margin-top:5px;color:var(--ink-2);font-family:var(--f-body);font-size:12px;font-style:italic}
 .mctip .pt-h{display:block;margin-top:6px;color:var(--mc-6)}
 .mctip .pt-in{display:block;color:var(--ink-2);font-family:var(--f-body);font-size:12.5px}
-.mctip:has(.pt-l,.pt-in){max-width:340px}
+.mctip:has(.pt-l,.pt-in,.pt-lore){max-width:420px}
