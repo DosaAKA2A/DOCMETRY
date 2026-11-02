@@ -95,7 +95,7 @@ h1,h2,h3,h4{font-family:var(--f-head);font-stretch:100%!important;letter-spacing
 .vh h1{font:700 clamp(30px,3.6vw,52px)/1.02 var(--f-head);letter-spacing:-.03em;text-transform:none}
 .sect__h h2{font:700 clamp(20px,1.9vw,28px)/1.05 var(--f-head);letter-spacing:-.02em;text-transform:none}
 /* Dosa 02/11: el rótulo EDERUSDEX de la portada se queda como en la guía (Archivo estrecha y gruesa, DEX en su azul) */
-.mast__word h1{font:900 16.2cqi/.8 "Archivo",system-ui,sans-serif!important;font-stretch:62%!important;letter-spacing:-.01em!important}
+.mast__word h1{font:900 14.4cqi/.86 "Archivo","Segoe UI",system-ui,sans-serif!important;font-stretch:100%!important;letter-spacing:-.02em!important}
 .mast__word h1 span.az{color:#00B2FF}
 .mast__lead p{font:600 clamp(19px,1.7vw,26px)/1.22 var(--f-head);letter-spacing:-.01em}
 .btn{font:700 13px var(--f-head);letter-spacing:.06em}
