@@ -294,7 +294,7 @@ function tierlist(el, items, o) {
 let calP = null;
 function cargarCalamity() {
   const v = (($('script[src*="codice.js"]') || {}).src || '').split('v=')[1] || '1';
-  return calP || (calP = fetch('assets/calamity.html?v=' + v).then(r => { if (!r.ok) throw r.status; return r.text(); }).then(html => {
+  return calP || (calP = fetch((($('script[src*="codice.js"]') || {}).src || 'assets/').replace(/codice\.js.*$/, '') + 'calamity.html?v=' + v).then(r => { if (!r.ok) throw r.status; return r.text(); }).then(html => {
     const box = document.createElement('div'); box.innerHTML = html;
     const st = document.createElement('style'); st.id = 'cal-css'; st.textContent = $('style', box).textContent; document.head.appendChild(st);
     const C = JSON.parse($('#cal-temas', box).textContent);

@@ -1,0 +1,65 @@
+/* ==========================================================================
+   EDERUSDEX · tema ederus.com (Dosa 02/11): la misma guía, con el cristal, la
+   tipografía y los colores de https://ederus.com. Solo eso: no cambia estructura,
+   iconos ni contenido. Se carga después de codice.css en /ederus/.
+   ========================================================================== */
+:root{
+  /* tipografía de ederus.com */
+  --f-head:"Space Grotesk","Sora",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Instrument Sans",ui-sans-serif,system-ui,sans-serif;
+  --f-px:"JetBrains Mono",ui-monospace,monospace;
+  /* colores de ederus.com */
+  --obs:#0b0a16;--obs-2:#1a1730;--obs-3:#232043;--stone:#34305c;--stone-2:#4a4580;--ash:#7a779a;
+  --ink:#eaf0fa;--ink-2:#c9c5e2;--muted:#9a96b8;
+  --az:#81d0fa;--gold:#ffc94a;--gold-l:#ffd97a;
+  --tip-bg:rgba(18,16,31,.94);--tip-b1:#613cf4;--tip-b2:#34305c;
+  --hueco:#0b0a16;--hueco-luz:#34305c;--marco-luz:#4a4580;--marco-sombra:#0b0a16;--inv:#1a1730;
+  --slot:#12101f;--slot-osc:#0b0a16;--slot-medio:#1a1730;--slot-2:#12101f;--slot-3:#1a1730;
+  --ficha:#12101f;--ficha-2:#1a1730;--ficha-3:#232043;
+  --r:14px;
+  /* cristal */
+  --vidrio:linear-gradient(#ffffff0a,#0000 140px),rgba(26,23,48,.80);
+  --vidrio-borde:#34305c8c;
+  --vidrio-sombra:inset 0 1px 0 #ffffff12,0 8px 24px -8px #150a3ab3;
+  --sig:linear-gradient(100deg,#458ee7,#613cf4,#eb86f9);
+}
+html,body{background:#0b0a16}
+body{font-family:var(--f-body);letter-spacing:0}
+
+/* fondo de ederus.com: rayos de color, rejilla, viñeta y borde orquídea (fijo, sin animar) */
+.bg-ederus{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.bg-ederus>*{position:absolute;inset:0}
+.bg-ederus .rays{height:680px;bottom:auto;background-image:linear-gradient(98deg,#0000 8%,#613cf41a 13%,#0000 18% 27%,#eb86f914 32%,#0000 38% 49%,#458ee717 55%,#0000 61% 70%,#feb3fd0f 75%,#0000 80% 88%,#613cf414 92%,#0000 97%)}
+.bg-ederus .grid{background-image:linear-gradient(90deg,#9a96b80d 1px,#0000 0),linear-gradient(#9a96b80d 1px,#0000 0);background-size:72px 72px;-webkit-mask-image:radial-gradient(78% 58% at 50% 0,#000 15%,#0000 78%);mask-image:radial-gradient(78% 58% at 50% 0,#000 15%,#0000 78%)}
+.bg-ederus .glow{background:radial-gradient(60% 50% at 80% 0,#613cf42e,#0000 70%),radial-gradient(50% 40% at 0 30%,#458ee71f,#0000 70%),radial-gradient(40% 40% at 100% 90%,#eb86f914,#0000 70%)}
+.bg-ederus .vignette{background:radial-gradient(105% 75% at 50% 35%,#0000 45%,#0b0a16b8 100%)}
+.bg-ederus .edge{height:180px;bottom:auto;background-image:linear-gradient(#feb3fd73,#0000 1px),linear-gradient(#feb3fd14,#0000 34%),linear-gradient(#613cf414,#0000 100%)}
+
+/* paneles de cristal (sin blur en las tarjetas: el blur solo en lo fijo, para no penalizar el rendimiento) */
+.glass,.cc,.vh,.tl,.tw,.tlbar,.bar,.note,.podium,.tips,.inv,.dkv,.ht-wrap,.mx-wrap,.cmp__box,.cmp__cols,.ans,.champ,.calx-ess__i,.npc,.pzc,.mz,.mz-mob,.mz-drop,.mz-enc__q,.shop,.shop__mat,.ct,.pz,.book,.tagbox{
+  background:var(--vidrio);border-color:var(--vidrio-borde);box-shadow:var(--vidrio-sombra)}
+.glass,.cc,.vh,.tl,.tw,.podium,.tips,.cmp__box,.mz,.shop,.ct,.npc,.calx-ess__i{border-radius:20px}
+.tlbar,.bar,.note,.inv,.dkv,.ht-wrap,.mx-wrap,.pzc,.mz-mob,.mz-drop,.mz-enc__q,.shop__mat,.pz,.book,.ans,.champ,.tagbox{border-radius:12px}
+.tl,.tw{overflow:hidden}
+
+/* barra superior, menú lateral, panel lateral, buscador y recuadros: cristal con desenfoque, como la cabecera de ederus.com */
+.top{background:linear-gradient(180deg,#ffffff0d,#0000),rgba(11,10,22,.72);-webkit-backdrop-filter:blur(16px) saturate(1.5);backdrop-filter:blur(16px) saturate(1.5);border-bottom-color:#34305c8c;box-shadow:inset 0 1px 0 #ffffff12,0 10px 32px -18px #000000e6}
+.rail{background:linear-gradient(180deg,#ffffff08,#0000 220px),rgba(18,16,31,.78);-webkit-backdrop-filter:blur(16px) saturate(1.4);backdrop-filter:blur(16px) saturate(1.4);border-right-color:#34305c8c}
+.dr{background:linear-gradient(#ffffff0a,#0000 180px),rgba(18,16,31,.92);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);box-shadow:inset 0 1px 0 #ffffff12,-8px 0 0 #0b0a1680,inset 0 0 0 1px #613cf4}
+.mctip,.ctip{background:rgba(18,16,31,.94);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-radius:12px;box-shadow:inset 0 0 0 1px #613cf4,0 20px 48px -16px #1c0c4abf}
+.pal__box{background:#12101ff5;-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-radius:20px;border:1px solid #34305c;box-shadow:0 20px 48px -16px #1c0c4abf}
+.scrim{background:rgba(11,10,22,.6)}
+
+/* controles: pastillas y botones como los de ederus.com */
+.btn,.seg,.field,.search-trigger,.tchip,.tg,.icon-btn,.dr__x,.totop,.chip{border-radius:12px}
+.seg{background:rgba(18,16,31,.7);border-color:#34305c}
+.seg button.on,.btn--p,.tg.on::before{background:var(--sig);color:#fff}
+.btn--p{border:0}
+.rail a.on{background:var(--sig);color:#fff;border-radius:12px}
+.rail a.on .n{color:#ffffffcc}
+.rail a{border-radius:12px}
+
+/* titulares: Space Grotesk, sin condensar */
+h1,h2,h3,.cc h3,.ct h3,.mz__h h3,.dr__id h2,.npc__n,.calx-ess__i b{font-family:var(--f-head);font-stretch:100%;letter-spacing:-.03em}
+.vh h1,.mast__word h1{letter-spacing:-.04em}
+.sect__h h2{letter-spacing:-.02em}
