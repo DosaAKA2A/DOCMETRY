@@ -76,8 +76,11 @@ function faceURL(skin) {
     const img = await loadImg(`${CDN}1.21.4/entity/${p}.png`);
     const S = Math.max(w, h), c = document.createElement('canvas'); c.width = c.height = S;
     const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
-    const ox = (S - w) / 2, oy = (S - h) / 2;
-    g.drawImage(img, fx, fy, w, h, ox, oy, w, h);
+    // Dosa 02/11: si la cara no es cuadrada, no se deja hueco: se amplía el recorte con lo que sigue en la skin
+    // (arriba y abajo si es ancha, a los lados si es alta), sin salirse de la textura
+    const sx = Math.max(0, Math.min(img.width - S, fx - Math.floor((S - w) / 2))), sy = Math.max(0, Math.min(img.height - S, fy - Math.floor((S - h) / 2)));
+    const ox = fx - sx, oy = fy - sy;
+    g.drawImage(img, sx, sy, S, S, 0, 0, S, S);
     if (fix && fix.n) { const [nx, ny, nw, nh, dx, dy] = fix.n; g.drawImage(img, nx, ny, nw, nh, ox + dx, oy + dy, nw, nh); }
     return c.toDataURL();
   })());
