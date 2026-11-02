@@ -774,3 +774,7 @@ main{view-transition-name:main-view}
 .pz-zona-txt{margin:0 0 6px}
 /* tags tal como se ven en el juego */
 .tagmc{font:400 13px var(--f-px);white-space:nowrap;padding:3px 7px;background:color-mix(in srgb,var(--negro) 55%,transparent)}
+
+/* rótulo de tier con nombre largo (encantamientos: Ancestral, Legendario…) */
+.tl-row .tl-t.largo b,.tl-row[data-t=EX] .tl-t.largo b{font-size:12px;letter-spacing:.02em}
+.tchip.largo{width:auto;padding:0 10px}
