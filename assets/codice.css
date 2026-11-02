@@ -876,3 +876,8 @@ main{view-transition-name:main-view}
 .pzcaja h3{color:var(--cj)}
 .pzcaja__pct{background:var(--cj)!important;color:#0b0a16!important}
 .pzcaja:hover{border-color:var(--cj)!important}
+
+/* encantamientos: el libro y, en la esquina, el objeto en el que se pone */
+.tt .slot{position:relative}
+.enc-sub{position:absolute;right:-6px;bottom:-6px;width:30px;height:30px;display:grid;place-items:center;background:var(--obs);border:1px solid var(--stone);border-radius:6px;z-index:1}
+.enc-sub .ic{width:22px!important;height:22px!important;filter:none!important}
