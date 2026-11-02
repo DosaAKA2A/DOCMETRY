@@ -826,3 +826,27 @@ main{view-transition-name:main-view}
 .hot__tag{margin-left:auto;font:400 8px var(--f-px);text-transform:uppercase;padding:2px 5px;background:var(--cal-sangre);color:var(--negro)}
 .rail a.hot.on .hot__tag{background:var(--negro);color:var(--cal-sangre)}
 .mz__rank{display:inline-block;font:400 9px var(--f-px);text-transform:uppercase;padding:3px 7px;color:var(--negro);background:var(--mc-6)}
+
+/* tiendas de mazmorra en tarjetas */
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:12px}
+.shop{display:grid;gap:12px;padding:14px;align-content:start}
+.shop__h{display:flex;gap:12px;align-items:center}
+.shop__slot{position:relative;width:58px;height:58px;flex:none;cursor:help}
+.shop__slot .ic{width:40px;height:40px}
+.shop__h>div{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.shop__n{width:100%;font-size:15px;font-weight:800;line-height:1.25;color:var(--blanco)}
+.shop__tag{font:400 9px var(--f-px);text-transform:uppercase;padding:3px 7px;border:1px solid var(--stone-2);color:var(--ink-2)}
+.shop__tag.req{border-color:var(--mc-d);color:var(--mc-d)}
+.shop__coste{display:flex;flex-wrap:wrap;gap:6px}
+.shop__mat{display:flex;align-items:center;gap:6px;padding:4px 8px 4px 4px;background:var(--obs);border:1px solid var(--stone);border-radius:4px}
+.shop__mat .ic{width:24px;height:24px}
+.shop__mat b{font:400 11px var(--f-px);color:var(--mc-e)}
+.shop__mat small{font-size:12px;color:var(--ink-2)}
+.shop__efs{display:flex;flex-wrap:wrap;gap:6px}
+.shop__efs span{font-size:12.5px;padding:3px 8px;background:color-mix(in srgb,var(--mc-b) 14%,transparent);color:var(--mc-b);border-radius:4px}
+/* Mazmorras destacada en el menú, en dorado */
+.rail a.hot.oro{background:color-mix(in srgb,var(--mc-6) 14%,transparent);box-shadow:inset 3px 0 0 var(--mc-6)}
+.rail a.hot.oro:hover{background:color-mix(in srgb,var(--mc-6) 24%,transparent)}
+.rail a.hot.oro.on{background:var(--mc-6);color:var(--negro);box-shadow:none}
+.rail a.hot.oro .hot__tag{background:var(--mc-6)}
+.rail a.hot.oro.on .hot__tag{background:var(--negro);color:var(--mc-6)}

@@ -141,7 +141,7 @@ const VIEWS = [
   { g: 'Tier lists', id: 'tl-anomalias', t: 'Anomalías', ic: 'nether_star', n: () => D.anomalias.length, d: 'Vida × daño medio de cada anomalía.', w: 'w3' },
   { g: 'Base de datos', id: 'cajas', t: 'Cajas y premios', ic: 'tripwire_hook', n: () => D.premios.length, d: 'Cada caja, sus premios y la probabilidad de cada uno.', w: 'w4' },
   { g: 'Base de datos', id: 'encantamientos', t: 'Encantamientos', ic: 'enchanted_book', n: () => D.encantamientos.length, d: 'Los de AdvancedEnchantments con su efecto al nivel máximo.', w: 'w4' },
-  { g: 'Base de datos', id: 'mazmorras', t: 'Mazmorras', ic: 'wither_skeleton_spawn_egg', n: () => (D.mazmorras || []).length, d: 'Requisitos, jefes, botín, cofres, encargos y tiendas de cada mazmorra.', w: 'w4' },
+  { g: 'Base de datos', id: 'mazmorras', t: 'Mazmorras', ic: 'trial_key', hot: 'Jefes', hotc: 'oro', n: () => (D.mazmorras || []).length, d: 'Requisitos, jefes, botín, cofres, encargos y tiendas de cada mazmorra.', w: 'w4' },
   { g: 'Base de datos', id: 'mascotas', t: 'Mascotas', ic: 'wolf_spawn_egg', n: () => D.mascotas.length, d: 'Mascotas de CombatPets y de dónde sale cada una.', w: 'w3' },
   { g: 'Base de datos', id: 'tags', t: 'Tags', ic: 'name_tag', n: () => D.tags.length, d: 'Todos los tags y cómo se consiguen.', w: 'w3' },
   { g: 'Sistemas', id: 'economia', t: 'Economía y MobCoins', ic: 'gold_ingot', d: 'Dónde nace el dinero, dónde muere y cuánto vale cada cosa en MobCoins.', w: 'w6' },
@@ -158,7 +158,7 @@ const pad = n => String(n).padStart(2, '0');
 const nav = $('#nav'), main = $('#main');
 {
   let lastG = '';
-  nav.innerHTML = VIEWS.map(v => { const h = v.g !== lastG ? `<div class="rail__grp">${v.g}</div>` : ''; lastG = v.g; return h + `<a href="#${v.id}" data-v="${v.id}" data-num="${pad(VI[v.id].i)}"${v.hot ? ' class="hot"' : ''}>${ico(v.ic)}<span>${v.t}</span>${v.hot ? `<span class="hot__tag">${v.hot}</span>` : ''}${v.n ? `<span class="n">${v.n()}</span>` : ''}</a>`; }).join('') +
+  nav.innerHTML = VIEWS.map(v => { const h = v.g !== lastG ? `<div class="rail__grp">${v.g}</div>` : ''; lastG = v.g; return h + `<a href="#${v.id}" data-v="${v.id}" data-num="${pad(VI[v.id].i)}"${v.hot ? ` class="hot${v.hotc ? ' ' + v.hotc : ''}"` : ''}>${ico(v.ic)}<span>${v.t}</span>${v.hot ? `<span class="hot__tag">${v.hot}</span>` : ''}${v.n ? `<span class="n">${v.n()}</span>` : ''}</a>`; }).join('') +
     `<div class="rail__foot"><b>Atajos</b><kbd>${MAC ? '⌘' : 'Ctrl'}</kbd> <kbd>K</kbd> o <kbd>/</kbd> para buscar · <kbd>Esc</kbd> para cerrar fichas.</div>`;
   hydrate(nav);
 }
@@ -609,9 +609,9 @@ const B = {
         ${m.tropa.length ? '<button type="button" class="ct__more mz__more">Ver jefe, tropa y botín <span aria-hidden="true">→</span></button>' : ''}
       </article>`).join('')}</div>`, '01', 'Toca una mazmorra para ver su jefe, su tropa y lo que suelta cada mob.') +
       sect('Jefes y tropa', '<div id="tb" class="rv"></div>', '02') +
-      sect('Darian, el intendente: forja de Artoria', '<div id="td" class="rv"></div>', '03', 'Equipo de los caballeros a cambio del botín de los mobs de Artoria.') +
-      sect('Nerea: consumibles y el set de Veyra', '<div id="tn" class="rv"></div>', '04', 'El set de Veyra se desbloquea tras «La mano del culto» y solo se compra una vez.') +
-      sect('El alquimista', '<div id="ta" class="rv"></div>', '05', 'Efectos temporales y libros a cambio de dinero y materiales de mazmorra.') + fichas('mazmorras');
+      sect('Darian, el intendente: forja de Artoria', '<div id="td" class="shop-grid"></div>', '03', 'Equipo de los caballeros a cambio del botín de los mobs de Artoria.') +
+      sect('Nerea: consumibles y el set de Veyra', '<div id="tn" class="shop-grid"></div>', '04', 'El set de Veyra se desbloquea tras «La mano del culto» y solo se compra una vez.') +
+      sect('El alquimista', '<div id="ta" class="shop-grid"></div>', '05', 'Efectos temporales y libros a cambio de dinero y materiales de mazmorra.') + fichas('mazmorras');
     const EF = { SPEED: 'Velocidad', JUMP_BOOST: 'Salto', NIGHT_VISION: 'Visión nocturna', HASTE: 'Prisa', STRENGTH: 'Fuerza', RESISTANCE: 'Resistencia', REGENERATION: 'Regeneración', FIRE_RESISTANCE: 'Resistencia al fuego', WATER_BREATHING: 'Respiración acuática', ABSORPTION: 'Absorción', HEALTH_BOOST: 'Vida extra', LUCK: 'Suerte' };
     const efes = t => (t || '').split(',').map(x => x.trim()).filter(Boolean).map(x => { const [k, n] = x.split(':'); return (EF[k] || k) + ' ' + ROM(+n + 1); }).join(', ');
     const zona = id => M.find(m => m.id === id);
@@ -626,9 +626,19 @@ const B = {
       const be = $('.mz__enc', a); if (be) be.addEventListener('click', e => { e.stopPropagation(); encDr(m); });
       if (m.tropa.length) { a.style.cursor = 'pointer'; a.addEventListener('click', () => mzDr(m)); }
     });
-    table($('#td', el), [{ k: 'n', l: 'Lo que forja', render: (r, re) => `<b>${hl(r.n, re)}</b>` }, { k: 'cat', l: 'Tipo' }, { k: 'coste', l: 'Coste' }], T.darian || [], { filters: ['cat'], name: 'darian' });
-    table($('#tn', el), [{ k: 'n', l: 'Lo que vende', render: (r, re) => `<b>${hl(r.n, re)}</b>${r.q > 1 ? ` × ${r.q}` : ''}` }, { k: 'coste', l: 'Coste' }, { k: 'req', l: 'Requisito' }, { k: 'limite', l: 'Límite', t: 'num' }], T.nerea || [], { name: 'nerea' });
-    table($('#ta', el), [{ k: 'n', l: 'Oferta', render: (r, re) => `<b>${hl(r.n, re)}</b>` }, { k: 'efectos', l: 'Efectos', render: r => esc(efes(r.efectos)) }, { k: 'dur', l: 'Dura (min)', t: 'num' }, { k: 'dinero', l: 'Dinero' }, { k: 'materiales', l: 'Materiales' }], T.alquimista || [], { name: 'alquimista' });
+    // Dosa 02/11: tiendas con iconos, no como texto: objeto con su icono y nombre original, coste en fichas de material
+    const chips = c => `<div class="shop__coste">${c.map(([ic, q, n]) => `<span class="shop__mat" title="${esc(n)}">${ico(ic)}<b>×${fmt(q)}</b><small>${esc(n)}</small></span>`).join('')}</div>`;
+    const tienda = (lista, extra) => lista.map((o, i) => { const f = o.f; BYID.m.set(String(BYID.m.size), f);
+      return `<article class="shop glass"><div class="shop__h"><span class="slot shop__slot" data-tip="m:${BYID.m.size - 1}">${f.img ? `<span class="ic lg"><img alt="" src="${f.img}"></span>` : ico(f.ic, null, 1)}${f.q ? `<b class="pz__q">${esc(f.q)}</b>` : ''}</span>
+        <div><b class="shop__n" style="${f.c ? `color:${f.c}` : ''}">${f.nh ? rt(f.nh) : esc(f.n)}</b>${extra ? extra(o) : ''}</div></div>${chips(o.coste)}</article>`; }).join('');
+    BYID.m = new Map();
+    $('#td', el).innerHTML = tienda(T.darian || [], o => `<span class="shop__tag">${esc(o.cat)}</span>`);
+    $('#tn', el).innerHTML = tienda(T.nerea || [], o => `${o.req ? `<span class="shop__tag req">${esc(o.req)}</span>` : ''}${o.limite ? `<span class="shop__tag">Solo ${o.limite} vez</span>` : ''}`);
+    $('#ta', el).innerHTML = (T.alquimista || []).map(o => `<article class="shop glass"><div class="shop__h"><span class="slot shop__slot">${ico(o.efectos ? 'potion' : 'enchanted_book', null, 1)}</span>
+      <div><b class="shop__n">${esc(o.n)}</b>${o.dur ? `<span class="shop__tag">${fmt(o.dur)} min</span>` : ''}</div></div>
+      ${o.efectos ? `<div class="shop__efs">${efes(o.efectos).split(', ').map(e => `<span>${esc(e)}</span>`).join('')}</div>` : ''}
+      ${chips([['gold_ingot', o.dinero, 'Dinero'], ...o.coste])}</article>`).join('');
+    hydrate($('#td', el)); hydrate($('#tn', el)); hydrate($('#ta', el));
     table($('#tb', el), [{ k: 'mob', l: 'Mob', render: (r, re) => `<span class="row">${mobFace(r)}<b>${hl(r.mob, re)}</b></span>` }, { k: 'vida', l: 'Vida', t: 'bar' }, { k: 'dano', l: 'Daño', t: 'num' }, { k: 'armadura', l: 'Armadura', t: 'num' }, { k: 'habilidades', l: 'Habilidades', t: 'num' }, { k: 'fichero', l: 'Grupo' }], D.jefes, { filters: ['fichero'], sort: 'vida', name: 'mazmorras' });
   },
   mascotas(el) {
@@ -789,6 +799,7 @@ const TIPF = {
 let tipEl = null;
 TIPF.e = x => `<span class="t" style="color:${TC[x.tier]}">${esc(x.nombre)}</span><span class="sub">${esc(x.tn)} · ${esc(x.para || '')}</span>${x.desc ? `<span class="pt-lh" style="color:var(--mc-7)">${esc(x.desc)}</span>` : ''}${r('Niveles', fmt(x.niveles))}${x.efecto ? `<span class="pt-h">Al nivel máximo</span><span class="pt-in">${esc(x.efecto)}</span>` : ''}<span class="l">Clic para ver cada libro</span>`;
 TIPF.p = f => premioTip(f);
+TIPF.m = f => premioTip({ ...f, p: undefined });
 const placeTip = e => { const w = mctip.offsetWidth, h = mctip.offsetHeight; let x = e.clientX + 18, y = e.clientY - 12; if (x + w > innerWidth - 8) x = e.clientX - w - 18; if (y + h > innerHeight - 8) y = innerHeight - h - 8; mctip.style.transform = `translate(${x}px,${Math.max(8, y)}px)`; };
 document.addEventListener('pointerover', e => {
   if (e.pointerType !== 'mouse') return; const t = e.target.closest && e.target.closest('[data-tip]');
