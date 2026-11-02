@@ -38,11 +38,12 @@ const SVG = {
 };
 
 // ---------- iconos de Minecraft
-const ALIAS = { crossbow: 'crossbow_standby', sunflower: 'sunflower_front', illusioner_spawn_egg: 'evoker_spawn_egg' };
+const ALIAS = { crossbow: 'crossbow_standby', sunflower: 'sunflower_front', illusioner_spawn_egg: 'evoker_spawn_egg', enchanted_golden_apple: 'golden_apple', shulker_box: 'shulker_shell', clock: 'clock_00', compass: 'compass_00', recovery_compass: 'recovery_compass_00', player_head: 'skeleton_skull', spawner: 'trial_spawner', chest: 'barrel' };
+// cualquier caja de shulker de color se pinta con el caparazón
 function ico(id, dye, lg) {
   if (!id) return '<span class="ic' + (lg ? ' lg' : '') + '"></span>';
   if (String(id).startsWith('data:')) return `<span class="ic${lg ? ' lg' : ''}"><img alt="" src="${id}"></span>`;
-  id = String(id).toLowerCase(); id = ALIAS[id] || id;
+  id = String(id).toLowerCase(); id = ALIAS[id] || (id.endsWith('_shulker_box') ? 'shulker_shell' : id);
   if (dye && id.startsWith('leather_')) {
     return `<span class="ic${lg ? ' lg' : ''}"><span class="tint" style="background:${dye};-webkit-mask-image:url(${CDN}1.21.4/items/${id}.png);mask-image:url(${CDN}1.21.4/items/${id}.png)"></span><img alt="" loading="lazy" src="${CDN}1.21.4/items/${id}_overlay.png" onerror="this.remove()"></span>`;
   }
@@ -342,6 +343,32 @@ function calTema(id) {
     $$('[data-cat]', dr).forEach(a => a.addEventListener('click', e => { e.preventDefault(); calCat(a.dataset.cat); }));
   });
 }
+// ---------- panel de premios de una caja (pesca o crate): cada premio con su icono, probabilidad, lore y enlace
+const RAR_T = { Común: 'D', 'Poco común': 'C', Raro: 'B', Épico: 'A', Legendario: 'S', Mítico: 'EX', Ancestral: 'EX', Inmortal: 'EX', Único: 'A' };
+function premioHtml(f, extra) {
+  const slot = `<span class="slot pz__slot${f.g || f.ic === 'enchanted_golden_apple' ? ' ench' : ''}">${f.img ? `<span class="ic lg"><img alt="" src="${f.img}"></span>` : ico(f.ic, null, 1)}${f.q ? `<b class="pz__q">${esc(f.q)}</b>` : ''}</span>`;
+  const meta = [f.t, f.r].filter(Boolean).map(esc).join(' · ');
+  return `<article class="pz">${slot}<div class="pz__b">
+    <div class="pz__h"><b style="${f.c ? `color:${f.c}` : ''}">${esc(f.n)}</b><span class="pz__p">${fmt(f.p)} %${extra ? `<small>${extra(f)}</small>` : ''}</span></div>
+    ${meta ? `<div class="pz__m">${meta}</div>` : ''}
+    ${f.e ? `<div class="pz__e">${f.e.map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}
+    ${f.st ? `<div class="pz__st">${f.st.map(([k, v]) => `<span>${esc(k)} <b>${esc(v)}</b></span>`).join('')}</div>` : ''}
+    ${f.l ? `<div class="pz__l">${f.l.filter(x => x.trim()).map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}
+    ${f.fl ? `<p class="pz__fl">«${esc(f.fl)}»</p>` : ''}
+    ${f.in ? `<div class="pz__in">${f.in.map(([i, q, n]) => `<span title="${esc(n || i)}">${ico(i)}${q && q !== '1' ? `<b>${esc(q)}</b>` : ''}</span>`).join('')}</div>` : ''}
+    ${f.go ? `<a class="pz__go" href="#${esc(f.go)}">Ver su ficha <span aria-hidden="true">→</span></a>` : ''}
+  </div></article>`;
+}
+function openPremios(o) {
+  const L = o.lista || [];
+  openDrawer({ kind: o.kind, title: o.title, art: ico(o.ic, null, 1), color: o.color, wide: true, link: o.link, sub: o.sub,
+    extra: `<div class="pz-wrap"><label class="field pz-f">${SVG.search}<input type="search" placeholder="Buscar entre ${L.length} premios…" aria-label="Buscar premio"></label>
+      <div class="pz-list">${L.map(f => premioHtml(f, o.extra)).join('')}</div></div>` });
+  hydrate(dr);
+  const q = $('.pz-f input', dr), items = $$('.pz', dr);
+  q.addEventListener('input', () => { const v = q.value.trim().toLowerCase(); items.forEach((a, i) => { a.hidden = v && !JSON.stringify(L[i]).toLowerCase().includes(v); }); });
+  $$('.pz__go', dr).forEach(a => a.addEventListener('click', e => { e.preventDefault(); closeDrawer(); setTimeout(() => { location.hash = a.getAttribute('href').slice(1); }, 60); }));
+}
 // ---------- ficha (drawer)
 const dr = $('#dr'), scrim = $('#scrim'); let drBack = null, drView = null;
 function openDrawer(o) {
@@ -417,6 +444,10 @@ function encDetail(e) {
     kv: [['Nombre en inglés', esc(e.en)], ['Tier', `<span class="pill tier-${t}">${esc(e.tier)}</span>`], ['Para', esc(e.para)], ['Niveles', fmt(e.niveles)]],
     extra: (e.desc ? `<div><h4>Qué hace</h4><p class="encdesc">${esc(e.desc)}</p></div>` : '') + (libros ? `<div><h4>Libros por nivel</h4><div class="books">${libros}</div></div>` : '') });
 }
+const PZOPEN = {
+  cajas: id => { const b = $(`.pzcard[data-caja="${CSS.escape(id)}"]`); if (b) b.click(); },
+  pesca: id => { const b = $(`.pzcard[data-tier="${CSS.escape(id)}"]`); if (b) b.click(); },
+};
 const FIND = { encantamientos: [() => D.encantamientos, encDetail], 'tl-armaduras': [() => D.armaduras, setDetail], 'tl-armas': [() => D.armas, armaDetail], 'tl-anomalias': [() => D.anomalias, anDetail] };
 
 // ---------- comparador
@@ -529,10 +560,13 @@ const B = {
   cajas(el) {
     const C = [...D.cajas].sort((a, b) => b.ev_dinero - a.ev_dinero), mx = Math.max(...C.map(c => c.ev_dinero)), mm = Math.max(...C.map(c => c.ev_mc));
     el.innerHTML = head('cajas', 'Cajas y premios', `${D.cajas.length} cajas y ${D.premios.length} premios. La probabilidad es el peso del premio entre el total de su caja.`, [['Cajas', D.cajas.length], ['Premios', D.premios.length]]) +
-      sect('Comparativa por caja', `<div class="cards">${C.map((c, i) => `<div class="cc glass spot rv" style="--d:${(i % 4) * 60}ms"><h3>${esc(c.caja)}<span class="rank">#${pad(i + 1)}</span></h3><div class="kv"><span>Premios</span><span>${c.premios}</span><span>Equipo</span><span>${fmt(c.equipo)} %</span><span>Premio más raro</span><span>${fmt(c.rara)} %</span></div>
+      sect('Comparativa por caja', `<div class="cards">${C.map((c, i) => `<button type="button" class="cc glass spot rv pzcard" style="--d:${(i % 4) * 60}ms" data-caja="${esc(c.caja)}"><h3>${esc(c.caja)}<span class="rank">#${pad(i + 1)}</span></h3><div class="kv"><span>Premios</span><span>${c.premios}</span><span>Equipo</span><span>${fmt(c.equipo)} %</span><span>Premio más raro</span><span>${fmt(c.rara)} %</span></div>
         <div class="mlabel"><span>Dinero medio por llave</span><b>${fmt(c.ev_dinero)}</b></div><div class="meter"><i style="--w:${c.ev_dinero / mx}"></i></div>
-        <div class="mlabel"><span>MobCoins medias por llave</span><b>${fmt(c.ev_mc)}</b></div><div class="meter az"><i style="--w:${c.ev_mc / mm}"></i></div></div>`).join('')}</div>`, '01', 'Ordenadas por dinero medio por llave.') +
+        <div class="mlabel"><span>MobCoins medias por llave</span><b>${fmt(c.ev_mc)}</b></div><div class="meter az"><i style="--w:${c.ev_mc / mm}"></i></div><span class="ct__more">Ver los ${(c.lista || []).length} premios <span aria-hidden="true">→</span></span></button>`).join('')}</div>`, '01', 'Ordenadas por dinero medio por llave. Toca una caja para ver todos sus premios.') +
       sect('Todos los premios', '<div id="tb" class="rv"></div>', '02') + fichas('cajas');
+    $$('.pzcard', el).forEach(b => b.addEventListener('click', () => { const c = D.cajas.find(x => x.caja === b.dataset.caja);
+      openPremios({ kind: 'Crate · llave ' + c.llave, title: 'Crate ' + c.caja, ic: 'tripwire_hook', color: 'var(--gold)', lista: c.lista, link: 'cajas/' + c.caja,
+        sub: `${c.premios} premios · el más raro, ${fmt(c.rara)} %` }); }));
     table($('#tb', el), [{ k: 'caja', l: 'Caja' }, { k: 'premio', l: 'Premio', render: (r, re) => `<b>${hl(r.premio, re)}</b>` }, { k: 'tipo', l: 'Tipo' }, { k: 'rareza', l: 'Rareza' }, { k: 'pct', l: 'Probabilidad', t: 'bar', u: ' %' }, { k: 'limite', l: 'Límite' }], D.premios, { filters: ['caja', 'tipo', 'rareza'], sort: 'pct', name: 'premios' });
   },
   encantamientos(el) {
@@ -617,7 +651,7 @@ const B = {
     const pc = v => fmt(v) + ' %';
     const PUNT = { fish: 'Pez', common: 'Caja común', uncommon: 'Caja poco común', rare: 'Caja rara', epic: 'Caja épica', legendary: 'Caja legendaria', mythic: 'Caja mítica' };
     el.innerHTML = head('pesca', 'Pesca', 'La pesca de Ederus: cada captura trae una caja con premio. Qué sale, con qué probabilidad, qué cañas y carnadas compensan y lo que suma tu rango.', [['Peces', P.peces.length], ['Cañas', P.canas.length], ['Rarezas de caja', P.tiers.length]]) +
-      sect('Qué caja te sale', `<div class="cards">${P.tiers.map((t, i) => `<div class="cc glass spot rv" style="--d:${i * 50}ms"><h3>${esc(t.n)}<span class="rank"><span class="pill tier-${TCOL[t.n] || 'D'}">${pc(t.pct)}</span></span></h3><div class="meter az"><i style="--w:${Math.max(.02, t.pct / P.tiers[0].pct)}"></i></div><div class="kv">${t.premios.slice(0, 4).map(p => `<span>${esc(p.n)}</span><span>${pc(p.pct)}</span>`).join('')}</div></div>`).join('')}</div>`, '01', 'Probabilidad de cada rareza sin boosts, en la pesca normal. Debajo, sus premios más probables dentro de esa caja.') +
+      sect('Qué caja te sale', `<div class="cards">${P.tiers.map((t, i) => `<button type="button" class="cc glass spot rv pzcard" style="--d:${i * 50}ms" data-tier="${t.id}"><h3>${esc(t.n)}<span class="rank"><span class="pill tier-${TCOL[t.n] || 'D'}">${pc(t.pct)}</span></span></h3><div class="meter az"><i style="--w:${Math.max(.02, t.pct / P.tiers[0].pct)}"></i></div><div class="kv">${t.premios.slice(0, 4).map(p => `<span>${esc(p.n)}</span><span>${pc(p.pct)}</span>`).join('')}</div><span class="ct__more">Ver los ${(t.lista || []).length} premios <span aria-hidden="true">→</span></span></button>`).join('')}</div>`, '01', 'Probabilidad de cada rareza sin boosts, en la pesca normal. Toca una caja para ver todos sus premios.') +
       sect('Todos los premios', '<div id="tbp" class="rv"></div>', '02', 'La columna «Por captura» ya junta la probabilidad de la caja y la del premio dentro de ella.') +
       sect('Cañas', `<div class="cards">${P.canas.map((c, i) => `<div class="cc glass spot rv" style="--d:${i * 60}ms"><h3>${ico('fishing_rod')}${esc(c.n)}</h3><div class="kv"><span>Precio</span><span>${fmt(c.precio)} MC</span><span>Más cajas</span><span>+${fmt(c.cajas)} %</span><span>Suerte de rareza</span><span>+${fmt(c.suerte)} %</span><span>Pican antes</span><span>${fmt(c.mordida)} %</span></div></div>`).join('')}</div>`, '03', 'Se compran con MobCoins en la tienda de pesca.') +
       sect('Carnadas y funda', `<div class="cards">${P.carnadas.map((c, i) => `<div class="cc glass spot rv" style="--d:${i * 60}ms"><h3>${ico('spider_eye')}${esc(c.n)}</h3><div class="kv"><span>Precio</span><span>${fmt(c.precio)} MC</span><span>Usos por compra</span><span>${fmt(c.usos)} (máx. ${fmt(c.max)})</span><span>Más cajas</span><span>+${fmt(c.cajas)} %</span><span>Suerte de rareza</span><span>+${fmt(c.suerte)} %</span></div></div>`).join('')}<div class="cc glass spot rv"><h3>${ico('turtle_scute')}Funda anti-mordidas</h3><div class="kv"><span>Precio</span><span>${fmt(P.funda.precio)} MC</span><span>Protege</span><span>${fmt(P.funda.usos)} percances</span></div><p class="mut sm">Evita que un percance se lleve o se coma tu caña.</p></div></div>`, '04') +
@@ -627,6 +661,9 @@ const B = {
       sect('Pesca extrema', `<p class="note rv">Hay zonas de pesca extrema, como la del spawn de Calamity: la decide la zona, no el jugador. Dan un ${fmt(P.extrema.cajas)} % más de cajas y más suerte, pero el ${fmt(P.extrema.percance)} % de las capturas trae un percance (y un ${fmt(P.extrema.golpe)} %, un golpe de suerte). Lo que puede salir del agua: ${P.extrema.mobs.map(m => `<b>${esc(m.n)}</b> (${fmt(m.vida)} de vida, pega ${fmt(m.dano)}${m.golpe ? ` y te quita como mínimo el ${m.golpe} % de la vida` : ''})`).join(' y ')}. Los sets de la Marea y la Funda reducen el riesgo. Todo el detalle en <a href="#calamity/la-pesca-de-calamity">la pesca de Calamity</a>.</p><div id="tbx" class="rv"></div>`, '08') +
       sect('Torneos', `<div class="cards"><div class="cc glass spot rv"><h3>Puntos por captura</h3><div class="kv">${Object.entries(P.torneos.puntos).map(([k, v]) => `<span>${esc(PUNT[k] || k)}</span><span>${fmt(v)}</span>`).join('')}</div></div><div class="cc glass spot rv"><h3>Premios</h3><div class="kv">${Object.entries(P.torneos.premios).map(([k, v]) => `<span>${esc(k)}.º</span><span>${esc(v)}</span>`).join('')}</div></div></div>`, '09') +
       sect('Los cambios de Carpa', `<div class="cards">${P.carpa.map((c, i) => `<div class="cc glass spot rv" style="--d:${i * 50}ms"><h3>${esc(c.da)}</h3><div class="kv"><span>Pide</span><span>${esc(c.pide)}</span></div></div>`).join('')}</div>`, '10', 'Carpa, en el spawn de Calamity, mejora la Marea Celeste a Sangrienta.');
+    $$('.pzcard', el).forEach(b => b.addEventListener('click', () => { const t = P.tiers.find(x => x.id === b.dataset.tier);
+      openPremios({ kind: 'Pesca · caja ' + t.n.toLowerCase(), title: 'Caja ' + t.n, ic: 'fishing_rod', color: TC[TCOL[t.n] || 'D'], lista: t.lista, link: 'pesca/' + t.id,
+        sub: `<span class="pill tier-${TCOL[t.n] || 'D'}">${pc(t.pct)}</span> de las capturas sin boosts`, extra: f => `${fmt(Math.round(f.p * t.pct) / 100)} % por captura` }); }));
     table($('#tbp', el), [{ k: 'n', l: 'Premio' }, { k: 'caja', l: 'Caja' }, { k: 'tipo', l: 'Tipo' }, { k: 'pct', l: 'En su caja (%)', t: 'num' }, { k: 'real', l: 'Por captura (%)', t: 'num' }], P.tiers.flatMap(t => t.premios.map(p => ({ ...p, caja: t.n, real: Math.round(p.pct * t.pct) / 100 }))), { filters: ['caja', 'tipo'], sort: 'real', name: 'pesca-premios' });
     table($('#tbr', el), [{ k: 'rango', l: 'Rango' }, { k: 'cajas', l: 'Más cajas (%)', t: 'num' }, { k: 'suerte', l: 'Suerte (%)', t: 'num' }, { k: 'mordida', l: 'Pican antes (%)', t: 'num' }, { k: 'doble', l: 'Premio doble (%)', t: 'num' }, { k: 'talla', l: 'Peces más grandes (%)', t: 'num' }, { k: 'venta', l: 'Venta (%)', t: 'num' }, { k: 'percances', l: 'Menos percances (%)', t: 'num' }], P.rangos, { name: 'pesca-rangos' });
     table($('#tbf', el), [{ k: 'n', l: 'Pez' }, { k: 'rareza', l: 'Rareza' }, { k: 'zona', l: 'Dónde' }, { k: 'min', l: 'Talla mín. (cm)', t: 'num' }, { k: 'max', l: 'Talla máx. (cm)', t: 'num' }, { k: 'base', l: 'Precio base', t: 'num' }, { k: 'kg', l: 'Por kg', t: 'num' }], P.peces, { filters: ['rareza', 'zona'], sort: 'kg', name: 'pesca-peces' });
@@ -715,6 +752,7 @@ function route() {
   const h = decodeURIComponent(location.hash.slice(1));
   const [path, q] = h.split('--'); const [v, id] = path.split('/');
   closeDrawer(); show(v || 'inicio'); closeNav();
+  if (id && PZOPEN[v]) setTimeout(() => PZOPEN[v](id), first ? 300 : 120);
   if (id && FIND[v]) { const [list, fn] = FIND[v]; const it = list().find(x => String(x.id) === id); if (it) setTimeout(() => fn(it), first ? 300 : 120); }
   if (q) setTimeout(() => { const tb = built[v] && $('#tb', built[v]); if (tb && tb.setFilter) { tb.setFilter(q); tb.scrollIntoView({ block: 'start', behavior: 'smooth' }); } }, 220);
   first = false;
