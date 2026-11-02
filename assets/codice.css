@@ -681,10 +681,34 @@ main{view-transition-name:main-view}
 .book dt{color:var(--ink-2);font-size:12.5px}
 .book dd{margin:0;color:var(--gold);font:700 12.5px var(--f-body);white-space:nowrap}
 
-/* ---------- guía de Calamity dentro de EDERUSDEX (fragmento de tools/importar_calamity.py) ---------- */
-.calguia #p-calamity{--fondo:var(--obs);--capa:var(--obs-2);--capa-2:var(--obs-3);--borde:var(--stone);--texto:var(--ink);--suave:var(--ink-2);
-  --sangre:var(--cal-sangre);--brasa:var(--cal-brasa);--hueso:var(--ink);--display:var(--f-head);--cuerpo:var(--f-body);
-  background:transparent;font-size:16px;border:1px solid var(--stone);border-left:6px solid var(--cal-sangre);border-radius:var(--r);padding:4px clamp(14px,2.4vw,28px) 28px}
-.calguia #p-calamity .hoja{max-width:none}
-.calguia #p-calamity h2,.calguia #p-calamity .h1{font-stretch:75%;letter-spacing:0}
-.calguia #p-calamity section>p,.calguia #p-calamity .ficha p{max-width:80ch}
+/* ---------- Calamity: lo esencial, categorías y temas (tools/importar_calamity.py) ---------- */
+.calx-ess{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 22px}
+.calx-ess__i{display:flex;gap:14px;align-items:flex-start;padding:16px;background:var(--obs-2);border:1px solid var(--stone);border-top:4px solid var(--cal-sangre);border-radius:var(--r)}
+.calx-ess__i .ic{width:34px;height:34px;flex:none}
+.calx-ess__i b{display:block;font:900 21px/1 var(--f-head);font-stretch:70%;text-transform:uppercase;margin-bottom:6px}
+.calx-ess__i span{color:var(--ink-2);font-size:14px;line-height:1.45}
+.calx-nav{position:sticky;top:var(--top);z-index:20;display:flex;gap:8px;overflow-x:auto;padding:10px 0;margin:0 0 6px;background:var(--obs);border-bottom:1px solid var(--stone);scrollbar-width:none}
+.calx-nav .tg{flex:none;gap:8px}
+.calx-nav .tg small{font:400 9px var(--f-px);color:var(--cal-sangre)}
+.calx-nav .tg:hover{border-color:var(--cal-sangre);color:var(--ink)}
+.calx-cat{scroll-margin-top:calc(var(--top) + 64px);margin-top:28px}
+.calx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:16px}
+.ct{display:flex;flex-direction:column;gap:12px;padding:18px 18px 14px;cursor:pointer;border-top:3px solid var(--cal-sangre);transition:border-color .15s,transform .15s steps(2,end)}
+.ct:hover{border-color:var(--cal-brasa);transform:translateY(-2px)}
+.ct__h{display:flex;align-items:center;gap:12px}
+.ct__h .ic{width:30px;height:30px;flex:none}
+.ct h3{margin:0;font:900 25px/.95 var(--f-head);font-stretch:62%;text-transform:uppercase}
+.ct p{margin:0;color:var(--ink-2);font-size:14.5px;line-height:1.5}
+.ct ul{margin:0;padding:0;list-style:none;display:grid;gap:7px;font-size:14px;line-height:1.4}
+.ct li{position:relative;padding-left:16px}
+.ct li::before{content:"";position:absolute;left:0;top:.5em;width:7px;height:7px;background:var(--cal-sangre)}
+.ct__more{margin-top:auto;align-self:flex-start;border:0;background:none;padding:6px 0 0;color:var(--cal-brasa);font:400 10px var(--f-px);text-transform:uppercase;cursor:pointer}
+.ct:hover .ct__more{text-decoration:underline}
+.calx-sub{margin:30px 0 14px;font:900 30px/.95 var(--f-head);font-stretch:62%;text-transform:uppercase}
+@media (max-width:900px){.calx-ess{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.calx-ess{grid-template-columns:1fr}}
+/* contenido completo de cada tema, dentro de la ficha */
+#p-calamity.calx-dr{--fondo:transparent;--capa:var(--obs-2);--capa-2:var(--obs-3);--borde:var(--stone);--texto:var(--ink);--suave:var(--ink-2);
+  --sangre:var(--cal-sangre);--brasa:var(--cal-brasa);--hueso:var(--ink);--display:var(--f-head);--cuerpo:var(--f-body);background:transparent;font-size:15.5px}
+#p-calamity.calx-dr .hoja{max-width:none}
+#p-calamity.calx-dr section,#p-calamity.calx-dr>.hoja>*:first-child{padding-top:0}

@@ -293,16 +293,33 @@ function tierlist(el, items, o) {
   render();
 }
 
-// ---------- guía de Calamity (fragmento de EDERUS/calamity.html, ver tools/importar_calamity.py)
-let calFrag = null;
-function cargarCalamity(box) {
+// ---------- guía de Calamity: temas por categorías (assets/calamity.html, sale de tools/importar_calamity.py)
+let calP = null;
+function cargarCalamity() {
   const v = (($('script[src*="codice.js"]') || {}).src || '').split('v=')[1] || '1';
-  (calFrag || (calFrag = fetch('assets/calamity.html?v=' + v).then(r => { if (!r.ok) throw r.status; return r.text(); })))
-    .then(html => {
-      box.innerHTML = html;
-      box.querySelectorAll('script').forEach(o => { const n = document.createElement('script'); n.textContent = o.textContent; o.replaceWith(n); });
-      hydrate(box);
-    }, () => { calFrag = null; box.innerHTML = '<p class="note">No se ha podido cargar la guía de Calamity. Recarga la página.</p>'; });
+  return calP || (calP = fetch('assets/calamity.html?v=' + v).then(r => { if (!r.ok) throw r.status; return r.text(); }).then(html => {
+    const box = document.createElement('div'); box.innerHTML = html;
+    const st = document.createElement('style'); st.id = 'cal-css'; st.textContent = $('style', box).textContent; document.head.appendChild(st);
+    const C = JSON.parse($('#cal-temas', box).textContent);
+    C.html = Object.fromEntries($$('template[data-tema]', box).map(t => [t.dataset.tema, t.innerHTML]));
+    C.fichas = $('#cal-fichas', box).innerHTML;
+    C.js = $$('script[data-cal-js]', box).map(x => x.textContent);
+    C.byId = Object.fromEntries(C.temas.map(t => [t.id, t])); C.cat = Object.fromEntries(C.cats.map(c => [c.id, c]));
+    return C;
+  }).catch(e => { calP = null; throw e; }));
+}
+function calCat(id) {
+  closeDrawer(); const s = $('#calx-' + id); if (s) s.scrollIntoView({ block: 'start', behavior: RM ? 'auto' : 'smooth' });
+}
+function calTema(id) {
+  cargarCalamity().then(C => {
+    const t = C.byId[id]; if (!t) return;
+    openDrawer({ kind: 'Calamity · ' + C.cat[t.cat].t, title: t.t, art: ico(t.ic, null, 1), color: 'var(--cal-sangre)', link: 'calamity/' + t.id, wide: true,
+      extra: `<div id="p-calamity" class="calx-dr"><div class="hoja">${C.html[id]}${C.fichas}</div></div>` });
+    C.js.forEach(code => { try { new Function(code)(); } catch (e) { console.warn('[calamity]', e); } });
+    hydrate(dr);
+    $$('[data-cat]', dr).forEach(a => a.addEventListener('click', e => { e.preventDefault(); calCat(a.dataset.cat); }));
+  });
 }
 // ---------- ficha (drawer)
 const dr = $('#dr'), scrim = $('#scrim'); let drBack = null, drView = null;
@@ -554,11 +571,24 @@ const B = {
   },
   calamity(el) {
     const sets = D.armaduras.filter(s => s.origen === 'Calamity').sort((a, b) => b.poder - a.poder);
-    el.innerHTML = head('calamity', 'Calamity', 'El mundo hardcore: cordura, clima, la Parca, el Eclipse y el Armisticio, Esencias, el Altar de Sael, la Forja de Vael, contratos, ranking, la Temporada y su pesca.', [['Sets de Calamity', sets.length], ['Minijefes', 6]]) +
-      sect('La guía de Calamity', '<div id="calguia" class="calguia rv"><p class="mut">Cargando la guía de Calamity…</p></div>', '01', 'Todo lo que pasa dentro del mundo hardcore, pestaña a pestaña.') +
-      (sets.length ? sect('Sets de armadura de Calamity', `<div class="cards">${sets.map((s, i) => `<button type="button" class="cc glass spot rv" style="--d:${(i % 4) * 60}ms;text-align:left;cursor:pointer;color:inherit;font:inherit" data-id="${esc(s.id)}"><h3>${ico(s.icon, s.dye)}${esc(s.nombre)}<span class="rank"><span class="pill tier-${s.tier}">${s.tier}</span></span></h3><div class="mlabel"><span>Poder</span><b>${fmt(s.poder)}</b></div><div class="meter az"><i style="--w:${s.poder / mxA().poder}"></i></div><div class="kv"><span>Armadura</span><span>${fmt(s.armadura)}</span><span>Dureza</span><span>${fmt(s.dureza)}</span><span>Vida extra</span><span>${fmt(s.vida)}</span></div></button>`).join('')}</div>`, '02', 'Sacados de la tier list de armaduras. Toca uno para ver sus piezas.') : '') + fichas('calamity');
-    $$('.cc[data-id]', el).forEach(b => b.addEventListener('click', () => setDetail(sets.find(s => s.id === b.dataset.id))));
-    cargarCalamity($('#calguia', el));
+    const ESEN = [['iron_chestplate', 'Si mueres, lo pierdes todo', 'Lo que llevas encima se queda en Calamity. Solo vale lo que sacas vivo y le vendes a Oren.'],
+      ['netherite_hoe', 'No te quedes quieto', '10 minutos sin moverte y viene la Parca, un jefe de nivel Dios.'],
+      ['end_crystal', 'Eclipse: 02, 08, 14 y 20 h', '20 minutos de noche: mobs 10 niveles más fuertes y el doble de Esencias.'],
+      ['white_wool', 'Armisticio cada 12 horas', '2 horas de tregua: nadie puede hacer daño a otro jugador.']];
+    el.innerHTML = head('calamity', 'Calamity', 'El mundo hardcore de Ederus: se entra por el portal del spawn, se junta botín y se vuelve vivo para venderlo. Aquí tienes todo, por temas.', [['Temas', '…'], ['Sets de Calamity', sets.length], ['Minijefes', 6]]) +
+      `<div class="calx-ess rv">${ESEN.map(([i, t, d]) => `<div class="calx-ess__i">${ico(i)}<div><b>${t}</b><span>${d}</span></div></div>`).join('')}</div>` +
+      '<nav class="calx-nav" aria-label="Categorías de Calamity"></nav><div id="calx" class="calx"><p class="mut">Cargando la guía de Calamity…</p></div>';
+    const setsHtml = sets.length ? `<h3 class="calx-sub">Los sets de Calamity</h3><div class="cards">${sets.map((s, i) => `<button type="button" class="cc glass spot rv" style="--d:${(i % 4) * 60}ms;text-align:left;cursor:pointer;color:inherit;font:inherit" data-set="${esc(s.id)}"><h3>${ico(s.icon, s.dye)}${esc(s.nombre)}<span class="rank"><span class="pill tier-${s.tier}">${s.tier}</span></span></h3><div class="mlabel"><span>Poder</span><b>${fmt(s.poder)}</b></div><div class="meter az"><i style="--w:${s.poder / mxA().poder}"></i></div><div class="kv"><span>Armadura</span><span>${fmt(s.armadura)}</span><span>Dureza</span><span>${fmt(s.dureza)}</span><span>Vida extra</span><span>${fmt(s.vida)}</span></div></button>`).join('')}</div>` : '';
+    cargarCalamity().then(C => {
+      $('.stats .chip b', el).textContent = C.temas.length;
+      $('.calx-nav', el).innerHTML = C.cats.map((c, i) => `<button type="button" class="tg plain" data-cat="${c.id}"><small>${pad(i + 1)}</small>${esc(c.t)}</button>`).join('');
+      $('#calx', el).innerHTML = C.cats.map((c, i) => `<section class="sect calx-cat" id="calx-${c.id}"><div class="sect__h rv"><h2><small>${pad(i + 1)}</small>${esc(c.t)}</h2><p>${esc(c.d)}</p></div><div class="calx-grid">${C.temas.filter(t => t.cat === c.id).map((t, k) => `<article class="ct glass spot rv" style="--d:${(k % 3) * 60}ms" data-tema="${t.id}"><div class="ct__h">${ico(t.ic)}<h3>${esc(t.t)}</h3></div>${t.intro ? `<p>${esc(t.intro)}</p>` : ''}${t.puntos.length ? `<ul>${t.puntos.map(p => `<li>${esc(p)}</li>`).join('')}</ul>` : ''}<button type="button" class="ct__more">Ver todo${t.mas ? ` · ${t.mas + t.puntos.length} en total` : ''} <span aria-hidden="true">→</span></button></article>`).join('')}</div>${c.id === 'mejorar' ? setsHtml : ''}</section>`).join('');
+      hydrate(el); reveal(el);
+      $$('.ct', el).forEach(a => a.addEventListener('click', () => calTema(a.dataset.tema)));
+      $$('[data-set]', el).forEach(b => b.addEventListener('click', () => setDetail(sets.find(s => s.id === b.dataset.set))));
+      $$('.calx-nav [data-cat]', el).forEach(b => b.addEventListener('click', () => calCat(b.dataset.cat)));
+      const m = /^#calamity\/([a-z0-9-]+)/.exec(location.hash); if (m) calTema(m[1]);
+    }, () => { $('#calx', el).innerHTML = '<p class="note">No se ha podido cargar la guía de Calamity. Recarga la página.</p>'; });
   },
   pesca(el) {
     const P = D.pesca, TCOL = { Común: 'D', 'Poco común': 'C', Raro: 'B', Épico: 'A', Legendario: 'S', Mítico: 'EX', Inmortal: 'EX' };
@@ -572,7 +602,7 @@ const B = {
       sect('Lo que suma tu rango', '<div id="tbr" class="rv"></div>', '05', 'Bonos de pesca de cada rango VIP. No se suman entre sí: cuenta el más alto que tengas.') +
       sect('Eventos de pesca', `<div class="cards">${P.eventos.map((e, i) => `<div class="cc glass spot rv" style="--d:${i * 60}ms"><h3>${esc(e.n)}</h3><div class="kv">${e.cajas ? `<span>Más cajas</span><span>+${fmt(e.cajas)} %</span>` : ''}${e.suerte ? `<span>Suerte de rareza</span><span>+${fmt(e.suerte)} %</span>` : ''}${e.mordida ? `<span>Pican antes</span><span>${fmt(e.mordida)} %</span>` : ''}${e.doble ? `<span>Premio doble</span><span>${fmt(e.doble)} %</span>` : ''}</div></div>`).join('')}</div>`, '06', 'Los activa el staff y se anuncian en el chat.') +
       sect('Peces', '<div id="tbf" class="rv"></div>', '07', 'Talla y precio de venta: el precio sube con el peso de cada pez.') +
-      sect('Pesca extrema', `<p class="note rv">Hay zonas de pesca extrema, como la del spawn de Calamity: la decide la zona, no el jugador. Dan un ${fmt(P.extrema.cajas)} % más de cajas y más suerte, pero el ${fmt(P.extrema.percance)} % de las capturas trae un percance (y un ${fmt(P.extrema.golpe)} %, un golpe de suerte). Lo que puede salir del agua: ${P.extrema.mobs.map(m => `<b>${esc(m.n)}</b> (${fmt(m.vida)} de vida, pega ${fmt(m.dano)}${m.golpe ? ` y te quita como mínimo el ${m.golpe} % de la vida` : ''})`).join(' y ')}. Los sets de la Marea y la Funda reducen el riesgo. Todo el detalle en <a href="#calamity/pesca">la pesca de Calamity</a>.</p><div id="tbx" class="rv"></div>`, '08') +
+      sect('Pesca extrema', `<p class="note rv">Hay zonas de pesca extrema, como la del spawn de Calamity: la decide la zona, no el jugador. Dan un ${fmt(P.extrema.cajas)} % más de cajas y más suerte, pero el ${fmt(P.extrema.percance)} % de las capturas trae un percance (y un ${fmt(P.extrema.golpe)} %, un golpe de suerte). Lo que puede salir del agua: ${P.extrema.mobs.map(m => `<b>${esc(m.n)}</b> (${fmt(m.vida)} de vida, pega ${fmt(m.dano)}${m.golpe ? ` y te quita como mínimo el ${m.golpe} % de la vida` : ''})`).join(' y ')}. Los sets de la Marea y la Funda reducen el riesgo. Todo el detalle en <a href="#calamity/la-pesca-de-calamity">la pesca de Calamity</a>.</p><div id="tbx" class="rv"></div>`, '08') +
       sect('Torneos', `<div class="cards"><div class="cc glass spot rv"><h3>Puntos por captura</h3><div class="kv">${Object.entries(P.torneos.puntos).map(([k, v]) => `<span>${esc(PUNT[k] || k)}</span><span>${fmt(v)}</span>`).join('')}</div></div><div class="cc glass spot rv"><h3>Premios</h3><div class="kv">${Object.entries(P.torneos.premios).map(([k, v]) => `<span>${esc(k)}.º</span><span>${esc(v)}</span>`).join('')}</div></div></div>`, '09') +
       sect('Los cambios de Carpa', `<div class="cards">${P.carpa.map((c, i) => `<div class="cc glass spot rv" style="--d:${i * 50}ms"><h3>${esc(c.da)}</h3><div class="kv"><span>Pide</span><span>${esc(c.pide)}</span></div></div>`).join('')}</div>`, '10', 'Carpa, en el spawn de Calamity, mejora la Marea Celeste a Sangrienta.');
     table($('#tbp', el), [{ k: 'n', l: 'Premio' }, { k: 'caja', l: 'Caja' }, { k: 'tipo', l: 'Tipo' }, { k: 'pct', l: 'En su caja (%)', t: 'num' }, { k: 'real', l: 'Por captura (%)', t: 'num' }], P.tiers.flatMap(t => t.premios.map(p => ({ ...p, caja: t.n, real: Math.round(p.pct * t.pct) / 100 }))), { filters: ['caja', 'tipo'], sort: 'real', name: 'pesca-premios' });
