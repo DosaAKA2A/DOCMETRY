@@ -183,3 +183,10 @@ h1,h2,h3,h4{font-family:var(--f-head);font-stretch:100%!important;letter-spacing
 
 /* sin «Actualizado» en la cabecera (Dosa 02/11) */
 .vh .crumbs .upd{display:none}
+
+/* hover (Dosa 02/11): se recolorea el propio borde de la tarjeta en vez de dibujar un aro por fuera,
+   que dejaba ver el borde en degradado debajo y no casaba en las esquinas */
+.npc{--hb:var(--tono)}.ct,.calx-ess__i{--hb:var(--cal-sangre)}.mz{--hb:var(--mc-6)}.pzcaja{--hb:var(--cj)}
+.cc.spot:hover,.pzcard:hover,.ans:hover,.champ:hover,.shop:hover,.mz:hover,.ct:hover,.npc:hover,.calx-ess__i:hover{
+  transform:translateY(-3px);box-shadow:var(--inset-top),var(--sh-3)!important;
+  background:var(--panel-fondo) padding-box,linear-gradient(var(--hb,var(--violet)),var(--hb,var(--violet))) border-box!important}
