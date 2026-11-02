@@ -105,8 +105,8 @@ function hydrate(root) {
   hydrateFaces(root);
   root.querySelectorAll('img[data-id]').forEach(img => {
     if (img.src) return; const id = img.dataset.id;
-    const L = [CDN + '1.21.4/items/' + id + '.png', CDN + '1.21.4/blocks/' + id + '.png', CDN + '1.21.11/items/' + id + '.png', CDN + '1.21.11/blocks/' + id + '.png'];
-    const next = () => { const i = +img.dataset.i; if (i < L.length) { img.dataset.i = i + 1; img.src = L[i]; } else { img.onerror = null; img.style.visibility = 'hidden'; } };
+    const L = [CDN + '1.21.4/items/' + id + '.png', CDN + '1.21.4/blocks/' + id + '.png', CDN + '1.21.4/blocks/' + id + '_top.png', CDN + '1.21.11/items/' + id + '.png', CDN + '1.21.11/blocks/' + id + '.png'];
+    const next = () => { const i = +img.dataset.i || 0; if (i < L.length) { img.dataset.i = i + 1; img.src = L[i]; } else { img.onerror = null; img.style.visibility = 'hidden'; } };
     img.onload = () => img.classList.add('ok'); img.onerror = next; next();
   });
 }
@@ -151,7 +151,8 @@ const VIEWS = [
   { g: 'Sistemas', id: 'progresion', t: 'Rankup, playtime y misiones', ic: 'experience_bottle', d: 'Lo que se gana subiendo de rango, jugando horas y haciendo misiones.', w: 'w4' },
   { g: 'Sistemas', id: 'rangos', t: 'Rangos VIP', ic: 'golden_helmet', d: 'Lo que da cada rango, lado a lado.', w: 'w4' },
   { g: 'Sistemas', id: 'combate', t: 'Dificultad y hordas', ic: 'iron_sword', d: 'Cuánto pega cada cosa con cada armadura.', w: 'w4' },
-  { g: 'Sistemas', id: 'calamity', t: 'Calamity y pesca', ic: 'fishing_rod', d: 'El modo hardcore: amenazas, Esencias, Altar, Forja y pesca.', w: 'w6' },
+  { g: 'Sistemas', id: 'calamity', t: 'Calamity', ic: 'wither_rose', d: 'El mundo hardcore: cordura, Parca, Eclipse, Armisticio, Forja, contratos y Temporada.', w: 'w6' },
+  { g: 'Sistemas', id: 'pesca', t: 'Pesca', ic: 'fishing_rod', n: () => D.pesca.peces.length, d: 'Cajas, premios, cañas, carnadas, rangos y torneos de pesca.', w: 'w4' },
   { g: 'Sistemas', id: 'mundo', t: 'Mundo y servicios', ic: 'diamond_pickaxe', d: 'Minions, protecciones, minas y otros servicios.', w: 'w6' },
 ];
 const VI = Object.fromEntries(VIEWS.map((v, i) => [v.id, { ...v, i }]));
@@ -292,6 +293,17 @@ function tierlist(el, items, o) {
   render();
 }
 
+// ---------- guía de Calamity (fragmento de EDERUS/calamity.html, ver tools/importar_calamity.py)
+let calFrag = null;
+function cargarCalamity(box) {
+  const v = (($('script[src*="codice.js"]') || {}).src || '').split('v=')[1] || '1';
+  (calFrag || (calFrag = fetch('assets/calamity.html?v=' + v).then(r => { if (!r.ok) throw r.status; return r.text(); })))
+    .then(html => {
+      box.innerHTML = html;
+      box.querySelectorAll('script').forEach(o => { const n = document.createElement('script'); n.textContent = o.textContent; o.replaceWith(n); });
+      hydrate(box);
+    }, () => { calFrag = null; box.innerHTML = '<p class="note">No se ha podido cargar la guía de Calamity. Recarga la página.</p>'; });
+}
 // ---------- ficha (drawer)
 const dr = $('#dr'), scrim = $('#scrim'); let drBack = null, drView = null;
 function openDrawer(o) {
@@ -542,10 +554,31 @@ const B = {
   },
   calamity(el) {
     const sets = D.armaduras.filter(s => s.origen === 'Calamity').sort((a, b) => b.poder - a.poder);
-    el.innerHTML = head('calamity', 'Calamity y pesca', 'El modo hardcore: amenazas, Esencias, Altar, Forja y la pesca de Calamity.', [['Sets de Calamity', sets.length]]) +
-      (sets.length ? sect('Sets de armadura de Calamity', `<div class="cards">${sets.map((s, i) => `<button type="button" class="cc glass spot rv" style="--d:${(i % 4) * 60}ms;text-align:left;cursor:pointer;color:inherit;font:inherit" data-id="${esc(s.id)}"><h3>${ico(s.icon, s.dye)}${esc(s.nombre)}<span class="rank"><span class="pill tier-${s.tier}">${s.tier}</span></span></h3><div class="mlabel"><span>Poder</span><b>${fmt(s.poder)}</b></div><div class="meter az"><i style="--w:${s.poder / mxA().poder}"></i></div><div class="kv"><span>Armadura</span><span>${fmt(s.armadura)}</span><span>Dureza</span><span>${fmt(s.dureza)}</span><span>Vida extra</span><span>${fmt(s.vida)}</span></div></button>`).join('')}</div>`, '01', 'Sacados de la tier list de armaduras. Toca uno para ver sus piezas.') : '') +
-      sect('Pesca extrema', `<p class="note rv">El Ahogado de la Marea pega 14 sin armadura, y la pesca extrema quita como mínimo el 12 % de tu vida por golpe, lleves la armadura que lleves. Más detalle en <a href="#combate">Dificultad y hordas</a>.</p>`, sets.length ? '02' : '01') + fichas('calamity');
-    $$('[data-id]', el).forEach(b => b.addEventListener('click', () => setDetail(sets.find(s => s.id === b.dataset.id))));
+    el.innerHTML = head('calamity', 'Calamity', 'El mundo hardcore: cordura, clima, la Parca, el Eclipse y el Armisticio, Esencias, el Altar de Sael, la Forja de Vael, contratos, ranking, la Temporada y su pesca.', [['Sets de Calamity', sets.length], ['Minijefes', 6]]) +
+      sect('La guía de Calamity', '<div id="calguia" class="calguia rv"><p class="mut">Cargando la guía de Calamity…</p></div>', '01', 'Todo lo que pasa dentro del mundo hardcore, pestaña a pestaña.') +
+      (sets.length ? sect('Sets de armadura de Calamity', `<div class="cards">${sets.map((s, i) => `<button type="button" class="cc glass spot rv" style="--d:${(i % 4) * 60}ms;text-align:left;cursor:pointer;color:inherit;font:inherit" data-id="${esc(s.id)}"><h3>${ico(s.icon, s.dye)}${esc(s.nombre)}<span class="rank"><span class="pill tier-${s.tier}">${s.tier}</span></span></h3><div class="mlabel"><span>Poder</span><b>${fmt(s.poder)}</b></div><div class="meter az"><i style="--w:${s.poder / mxA().poder}"></i></div><div class="kv"><span>Armadura</span><span>${fmt(s.armadura)}</span><span>Dureza</span><span>${fmt(s.dureza)}</span><span>Vida extra</span><span>${fmt(s.vida)}</span></div></button>`).join('')}</div>`, '02', 'Sacados de la tier list de armaduras. Toca uno para ver sus piezas.') : '') + fichas('calamity');
+    $$('.cc[data-id]', el).forEach(b => b.addEventListener('click', () => setDetail(sets.find(s => s.id === b.dataset.id))));
+    cargarCalamity($('#calguia', el));
+  },
+  pesca(el) {
+    const P = D.pesca, TCOL = { Común: 'D', 'Poco común': 'C', Raro: 'B', Épico: 'A', Legendario: 'S', Mítico: 'EX', Inmortal: 'EX' };
+    const pc = v => fmt(v) + ' %';
+    const PUNT = { fish: 'Pez', common: 'Caja común', uncommon: 'Caja poco común', rare: 'Caja rara', epic: 'Caja épica', legendary: 'Caja legendaria', mythic: 'Caja mítica' };
+    el.innerHTML = head('pesca', 'Pesca', 'La pesca de Ederus: cada captura trae una caja con premio. Qué sale, con qué probabilidad, qué cañas y carnadas compensan y lo que suma tu rango.', [['Peces', P.peces.length], ['Cañas', P.canas.length], ['Rarezas de caja', P.tiers.length]]) +
+      sect('Qué caja te sale', `<div class="cards">${P.tiers.map((t, i) => `<div class="cc glass spot rv" style="--d:${i * 50}ms"><h3>${esc(t.n)}<span class="rank"><span class="pill tier-${TCOL[t.n] || 'D'}">${pc(t.pct)}</span></span></h3><div class="meter az"><i style="--w:${Math.max(.02, t.pct / P.tiers[0].pct)}"></i></div><div class="kv">${t.premios.slice(0, 4).map(p => `<span>${esc(p.n)}</span><span>${pc(p.pct)}</span>`).join('')}</div></div>`).join('')}</div>`, '01', 'Probabilidad de cada rareza sin boosts, en la pesca normal. Debajo, sus premios más probables dentro de esa caja.') +
+      sect('Todos los premios', '<div id="tbp" class="rv"></div>', '02', 'La columna «Por captura» ya junta la probabilidad de la caja y la del premio dentro de ella.') +
+      sect('Cañas', `<div class="cards">${P.canas.map((c, i) => `<div class="cc glass spot rv" style="--d:${i * 60}ms"><h3>${ico('fishing_rod')}${esc(c.n)}</h3><div class="kv"><span>Precio</span><span>${fmt(c.precio)} MC</span><span>Más cajas</span><span>+${fmt(c.cajas)} %</span><span>Suerte de rareza</span><span>+${fmt(c.suerte)} %</span><span>Pican antes</span><span>${fmt(c.mordida)} %</span></div></div>`).join('')}</div>`, '03', 'Se compran con MobCoins en la tienda de pesca.') +
+      sect('Carnadas y funda', `<div class="cards">${P.carnadas.map((c, i) => `<div class="cc glass spot rv" style="--d:${i * 60}ms"><h3>${ico('spider_eye')}${esc(c.n)}</h3><div class="kv"><span>Precio</span><span>${fmt(c.precio)} MC</span><span>Usos por compra</span><span>${fmt(c.usos)} (máx. ${fmt(c.max)})</span><span>Más cajas</span><span>+${fmt(c.cajas)} %</span><span>Suerte de rareza</span><span>+${fmt(c.suerte)} %</span></div></div>`).join('')}<div class="cc glass spot rv"><h3>${ico('turtle_scute')}Funda anti-mordidas</h3><div class="kv"><span>Precio</span><span>${fmt(P.funda.precio)} MC</span><span>Protege</span><span>${fmt(P.funda.usos)} percances</span></div><p class="mut sm">Evita que un percance se lleve o se coma tu caña.</p></div></div>`, '04') +
+      sect('Lo que suma tu rango', '<div id="tbr" class="rv"></div>', '05', 'Bonos de pesca de cada rango VIP. No se suman entre sí: cuenta el más alto que tengas.') +
+      sect('Eventos de pesca', `<div class="cards">${P.eventos.map((e, i) => `<div class="cc glass spot rv" style="--d:${i * 60}ms"><h3>${esc(e.n)}</h3><div class="kv">${e.cajas ? `<span>Más cajas</span><span>+${fmt(e.cajas)} %</span>` : ''}${e.suerte ? `<span>Suerte de rareza</span><span>+${fmt(e.suerte)} %</span>` : ''}${e.mordida ? `<span>Pican antes</span><span>${fmt(e.mordida)} %</span>` : ''}${e.doble ? `<span>Premio doble</span><span>${fmt(e.doble)} %</span>` : ''}</div></div>`).join('')}</div>`, '06', 'Los activa el staff y se anuncian en el chat.') +
+      sect('Peces', '<div id="tbf" class="rv"></div>', '07', 'Talla y precio de venta: el precio sube con el peso de cada pez.') +
+      sect('Pesca extrema', `<p class="note rv">Hay zonas de pesca extrema, como la del spawn de Calamity: la decide la zona, no el jugador. Dan un ${fmt(P.extrema.cajas)} % más de cajas y más suerte, pero el ${fmt(P.extrema.percance)} % de las capturas trae un percance (y un ${fmt(P.extrema.golpe)} %, un golpe de suerte). Lo que puede salir del agua: ${P.extrema.mobs.map(m => `<b>${esc(m.n)}</b> (${fmt(m.vida)} de vida, pega ${fmt(m.dano)}${m.golpe ? ` y te quita como mínimo el ${m.golpe} % de la vida` : ''})`).join(' y ')}. Los sets de la Marea y la Funda reducen el riesgo. Todo el detalle en <a href="#calamity/pesca">la pesca de Calamity</a>.</p><div id="tbx" class="rv"></div>`, '08') +
+      sect('Torneos', `<div class="cards"><div class="cc glass spot rv"><h3>Puntos por captura</h3><div class="kv">${Object.entries(P.torneos.puntos).map(([k, v]) => `<span>${esc(PUNT[k] || k)}</span><span>${fmt(v)}</span>`).join('')}</div></div><div class="cc glass spot rv"><h3>Premios</h3><div class="kv">${Object.entries(P.torneos.premios).map(([k, v]) => `<span>${esc(k)}.º</span><span>${esc(v)}</span>`).join('')}</div></div></div>`, '09') +
+      sect('Los cambios de Carpa', `<div class="cards">${P.carpa.map((c, i) => `<div class="cc glass spot rv" style="--d:${i * 50}ms"><h3>${esc(c.da)}</h3><div class="kv"><span>Pide</span><span>${esc(c.pide)}</span></div></div>`).join('')}</div>`, '10', 'Carpa, en el spawn de Calamity, mejora la Marea Celeste a Sangrienta.');
+    table($('#tbp', el), [{ k: 'n', l: 'Premio' }, { k: 'caja', l: 'Caja' }, { k: 'tipo', l: 'Tipo' }, { k: 'pct', l: 'En su caja (%)', t: 'num' }, { k: 'real', l: 'Por captura (%)', t: 'num' }], P.tiers.flatMap(t => t.premios.map(p => ({ ...p, caja: t.n, real: Math.round(p.pct * t.pct) / 100 }))), { filters: ['caja', 'tipo'], sort: 'real', name: 'pesca-premios' });
+    table($('#tbr', el), [{ k: 'rango', l: 'Rango' }, { k: 'cajas', l: 'Más cajas (%)', t: 'num' }, { k: 'suerte', l: 'Suerte (%)', t: 'num' }, { k: 'mordida', l: 'Pican antes (%)', t: 'num' }, { k: 'doble', l: 'Premio doble (%)', t: 'num' }, { k: 'talla', l: 'Peces más grandes (%)', t: 'num' }, { k: 'venta', l: 'Venta (%)', t: 'num' }, { k: 'percances', l: 'Menos percances (%)', t: 'num' }], P.rangos, { name: 'pesca-rangos' });
+    table($('#tbf', el), [{ k: 'n', l: 'Pez' }, { k: 'rareza', l: 'Rareza' }, { k: 'zona', l: 'Dónde' }, { k: 'min', l: 'Talla mín. (cm)', t: 'num' }, { k: 'max', l: 'Talla máx. (cm)', t: 'num' }, { k: 'base', l: 'Precio base', t: 'num' }, { k: 'kg', l: 'Por kg', t: 'num' }], P.peces, { filters: ['rareza', 'zona'], sort: 'kg', name: 'pesca-peces' });
+    table($('#tbx', el), [{ k: 'n', l: 'Percance' }, { k: 'pct', l: 'De los percances (%)', t: 'num' }], P.extrema.percances, { sort: 'pct', name: 'pesca-percances' });
   },
   mundo(el) {
     const C = { Piedra: 'var(--min-piedra)', Hierro: 'var(--min-hierro)', Carbón: 'var(--min-carbon)', Oro: 'var(--min-oro)', Redstone: 'var(--min-redstone)', Lapislázuli: 'var(--min-lapis)', Diamante: 'var(--min-diamante)', Esmeralda: 'var(--min-esmeralda)', Escombros: 'var(--min-escombros)' };

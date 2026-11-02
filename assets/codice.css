@@ -16,6 +16,8 @@
   --oro:#f0c04a;--oro-claro:#ffe28a;--oro-medio:#e8b63c;--oro-oscuro:#d9a536;--oro-sombra:#8a6216;--oro-destello:#fff1b8;--oro-luz:#ffc846;--oro-suave:#ffd764;
   /* contorno y brillo de los EX (morado del tier EX) */
   --ex:var(--tc-ex);--ex-claro:#e2c6ff;--ex-medio:#c58cff;--ex-oscuro:#9a5cf0;--ex-sombra:#4a1f7a;--ex-destello:#f6ecff;--ex-luz:#b77bff;--ex-suave:#d7b0ff;
+  /* guía de Calamity: sangre y brasa */
+  --cal-sangre:#e2483f;--cal-brasa:#ffb86b;--cal-fondo:#170d0f;
   /* madera (cartel) */
   --madera:#3a2a18;--madera-luz:#8a6538;--madera-sombra:#3e2c16;
   /* color de cada tier en textos, fichas y filas de la tier list */
@@ -678,3 +680,11 @@ main{view-transition-name:main-view}
 .book dl div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed color-mix(in srgb,var(--blanco) 8%,transparent);padding-bottom:2px}
 .book dt{color:var(--ink-2);font-size:12.5px}
 .book dd{margin:0;color:var(--gold);font:700 12.5px var(--f-body);white-space:nowrap}
+
+/* ---------- guía de Calamity dentro de EDERUSDEX (fragmento de tools/importar_calamity.py) ---------- */
+.calguia #p-calamity{--fondo:var(--obs);--capa:var(--obs-2);--capa-2:var(--obs-3);--borde:var(--stone);--texto:var(--ink);--suave:var(--ink-2);
+  --sangre:var(--cal-sangre);--brasa:var(--cal-brasa);--hueso:var(--ink);--display:var(--f-head);--cuerpo:var(--f-body);
+  background:transparent;font-size:16px;border:1px solid var(--stone);border-left:6px solid var(--cal-sangre);border-radius:var(--r);padding:4px clamp(14px,2.4vw,28px) 28px}
+.calguia #p-calamity .hoja{max-width:none}
+.calguia #p-calamity h2,.calguia #p-calamity .h1{font-stretch:75%;letter-spacing:0}
+.calguia #p-calamity section>p,.calguia #p-calamity .ficha p{max-width:80ch}
