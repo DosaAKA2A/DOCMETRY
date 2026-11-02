@@ -712,3 +712,22 @@ main{view-transition-name:main-view}
   --sangre:var(--cal-sangre);--brasa:var(--cal-brasa);--hueso:var(--ink);--display:var(--f-head);--cuerpo:var(--f-body);background:transparent;font-size:15.5px}
 #p-calamity.calx-dr .hoja{max-width:none}
 #p-calamity.calx-dr section,#p-calamity.calx-dr>.hoja>*:first-child{padding-top:0}
+
+/* NPCs de Calamity: marco sólido, sin degradados */
+.npcs-x{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px;margin:0 0 22px}
+.npc{display:flex;gap:14px;align-items:stretch;text-align:left;padding:10px;cursor:pointer;color:inherit;font:inherit;background:var(--obs-2);border:1px solid var(--stone);border-left:5px solid var(--tono);border-radius:var(--r);transition:border-color .15s,transform .15s steps(2,end)}
+.npc:hover{border-color:var(--tono);transform:translateY(-2px)}
+.npc__img{flex:none;width:84px;display:grid;place-items:end center;background:var(--slot);border:3px solid;border-color:var(--hueco) var(--hueco-luz) var(--hueco-luz) var(--hueco);box-shadow:inset 0 -26px 0 color-mix(in srgb,var(--tono) 28%,var(--slot))}
+.npc__img img{width:68px;height:auto;image-rendering:pixelated;display:block;margin-top:6px}
+.npc__txt{display:flex;flex-direction:column;gap:4px;min-width:0;padding:2px 0}
+.npc__rol{font:400 9px var(--f-px);text-transform:uppercase;color:var(--tono);letter-spacing:.04em}
+.npc__n{font:900 30px/.9 var(--f-head);font-stretch:62%;text-transform:uppercase;color:var(--ink)}
+.npc__hace{font-size:13.5px;line-height:1.4;color:var(--ink-2)}
+.npc__hace .es{color:var(--mc-a)}.npc__hace .mc{color:var(--mc-e)}
+.npc-dr__hace{font-size:17px;line-height:1.5;margin:0 0 18px;color:var(--ink)}
+#p-calamity.calx-dr h4{margin:18px 0 10px;font:400 10px var(--f-px);color:var(--mc-d);text-transform:uppercase}
+.npc-dr__menu{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.npc-dr__menu li{position:relative;padding:10px 12px 10px 28px;background:var(--obs-2);border:1px solid var(--stone);border-radius:4px}
+.npc-dr__menu li::before{content:"";position:absolute;left:11px;top:1.05em;width:7px;height:7px;background:var(--cal-brasa)}
+#p-calamity.calx-dr .npc-dr__3d{grid-template-columns:1fr}
+#p-calamity.calx-dr .npc-dr__3d .quien,#p-calamity.calx-dr .npc-dr__3d .hace,#p-calamity.calx-dr .npc-dr__3d .menu{display:none}

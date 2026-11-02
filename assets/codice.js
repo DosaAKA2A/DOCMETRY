@@ -311,6 +311,27 @@ function cargarCalamity() {
 function calCat(id) {
   closeDrawer(); const s = $('#calx-' + id); if (s) s.scrollIntoView({ block: 'start', behavior: RM ? 'auto' : 'smooth' });
 }
+// NPCs de Calamity: retrato nítido en marco sólido con el color de cada uno (Dosa 02/11: nada de fondos difuminados)
+function npcLis(C) {
+  if (!C.npcLi) { const t = document.createElement('template'); t.innerHTML = C.html['quien-es-quien']; C.npcLi = Object.fromEntries($$('.npcs > li', t.content).map(li => [$('.nom', li).textContent, li])); }
+  return C.npcLi;
+}
+function npcGaleria(C) {
+  const L = npcLis(C);
+  return `<div class="npcs-x">${C.npcs.map((n, i) => `<button type="button" class="npc rv" style="--tono:${n.tono};--d:${(i % 5) * 50}ms" data-npc="${esc(n.n)}">
+    <span class="npc__img"><img src="${L[n.n] ? $('img', L[n.n]).getAttribute('src') : ''}" alt="" width="110" height="166"></span>
+    <span class="npc__txt"><span class="npc__rol">${esc(n.rol)}</span><b class="npc__n">${esc(n.n)}</b><span class="npc__hace">${n.hace}</span></span></button>`).join('')}</div>`;
+}
+function calNpc(nom) {
+  cargarCalamity().then(C => {
+    const n = C.npcs.find(x => x.n === nom), li = npcLis(C)[nom]; if (!n) return;
+    openDrawer({ kind: 'Calamity · NPC del spawn', title: n.n, art: `<img src="${$('img', li).getAttribute('src')}" alt="" style="height:78%;image-rendering:pixelated">`, color: n.tono,
+      sub: `<span class="pill" style="background:${n.tono};color:#000">${esc(n.rol)}</span>`,
+      extra: `<div id="p-calamity" class="calx-dr"><div class="hoja"><p class="npc-dr__hace">${n.hace}</p><h4>Lo que te ofrece</h4><ul class="npc-dr__menu">${n.menu.map(m => `<li>${m}</li>`).join('')}</ul><h4>Su skin</h4><ul class="npcs npc-dr__3d">${li.outerHTML}</ul>${C.fichas}</div></div>` });
+    C.js.forEach(code => { try { new Function(code)(); } catch (e) { console.warn('[calamity]', e); } });
+    hydrate(dr);
+  });
+}
 function calTema(id) {
   cargarCalamity().then(C => {
     const t = C.byId[id]; if (!t) return;
@@ -582,9 +603,10 @@ const B = {
     cargarCalamity().then(C => {
       $('.stats .chip b', el).textContent = C.temas.length;
       $('.calx-nav', el).innerHTML = C.cats.map((c, i) => `<button type="button" class="tg plain" data-cat="${c.id}"><small>${pad(i + 1)}</small>${esc(c.t)}</button>`).join('');
-      $('#calx', el).innerHTML = C.cats.map((c, i) => `<section class="sect calx-cat" id="calx-${c.id}"><div class="sect__h rv"><h2><small>${pad(i + 1)}</small>${esc(c.t)}</h2><p>${esc(c.d)}</p></div><div class="calx-grid">${C.temas.filter(t => t.cat === c.id).map((t, k) => `<article class="ct glass spot rv" style="--d:${(k % 3) * 60}ms" data-tema="${t.id}"><div class="ct__h">${ico(t.ic)}<h3>${esc(t.t)}</h3></div>${t.intro ? `<p>${esc(t.intro)}</p>` : ''}${t.puntos.length ? `<ul>${t.puntos.map(p => `<li>${esc(p)}</li>`).join('')}</ul>` : ''}<button type="button" class="ct__more">Ver todo${t.mas ? ` · ${t.mas + t.puntos.length} en total` : ''} <span aria-hidden="true">→</span></button></article>`).join('')}</div>${c.id === 'mejorar' ? setsHtml : ''}</section>`).join('');
+      $('#calx', el).innerHTML = C.cats.map((c, i) => `<section class="sect calx-cat" id="calx-${c.id}"><div class="sect__h rv"><h2><small>${pad(i + 1)}</small>${esc(c.t)}</h2><p>${esc(c.d)}</p></div>${c.id === 'antes' ? npcGaleria(C) : ''}<div class="calx-grid">${C.temas.filter(t => t.cat === c.id && t.id !== 'quien-es-quien').map((t, k) => `<article class="ct glass spot rv" style="--d:${(k % 3) * 60}ms" data-tema="${t.id}"><div class="ct__h">${ico(t.ic)}<h3>${esc(t.t)}</h3></div>${t.intro ? `<p>${esc(t.intro)}</p>` : ''}${t.puntos.length ? `<ul>${t.puntos.map(p => `<li>${esc(p)}</li>`).join('')}</ul>` : ''}<button type="button" class="ct__more">Ver todo${t.mas ? ` · ${t.mas + t.puntos.length} en total` : ''} <span aria-hidden="true">→</span></button></article>`).join('')}</div>${c.id === 'mejorar' ? setsHtml : ''}</section>`).join('');
       hydrate(el); reveal(el);
       $$('.ct', el).forEach(a => a.addEventListener('click', () => calTema(a.dataset.tema)));
+      $$('.npc', el).forEach(a => a.addEventListener('click', () => calNpc(a.dataset.npc)));
       $$('[data-set]', el).forEach(b => b.addEventListener('click', () => setDetail(sets.find(s => s.id === b.dataset.set))));
       $$('.calx-nav [data-cat]', el).forEach(b => b.addEventListener('click', () => calCat(b.dataset.cat)));
       const m = /^#calamity\/([a-z0-9-]+)/.exec(location.hash); if (m) calTema(m[1]);

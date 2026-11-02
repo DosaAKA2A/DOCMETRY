@@ -95,6 +95,30 @@ if len(escamas) == 5:
         frag, k = re.subn(r"(\b(?:La|El|Las) " + pieza + r" Celestes? y )\d+ Escamas?", lambda m: f"{m.group(1)}{n} Escama{'s' if n != 1 else ''}", frag)
         assert k == 1, f"no encuentro el cambio de Carpa de {pieza}"
 
+# Dosa 02/11: a Calamity se entra con el Cuerno de las Calamidades (lo vende Argos en el spawn del Survival,
+# DeluxeMenus cuerno_calamity.yml, $1.000.000; no se pierde al morir: Calamity muerte.cuerno-se-queda) y se sale por el portal.
+CORRIGE = [
+    ('data-id="crying_obsidian" alt="" aria-hidden="true" decoding="async" width="44" height="44"></span><div><strong><span class="num">1</span>Entras por el portal</strong>Está en el spawn del Survival y te deja en el spawn de Calamity.',
+     'data-id="goat_horn" alt="" aria-hidden="true" decoding="async" width="44" height="44"></span><div><strong><span class="num">1</span>Entras con el cuerno</strong>El Cuerno de las Calamidades lo vende Argos en el spawn del Survival por $1.000.000. Tócalo y te deja en el spawn de Calamity. No lo pierdes al morir.'),
+    ("Ahí te deja el portal de entrada y ahí están todos los NPC.", "Ahí te deja el cuerno y ahí están todos los NPC. Por su portal se vuelve al Survival."),
+]
+for a, b in CORRIGE:
+    assert frag.count(a) == 1, f"no encuentro el texto a corregir: {a[:60]}"
+    frag = frag.replace(a, b)
+
+# NPCs (Dosa 02/11: galería propia, sin fondos difuminados): se sacan de la lista «Quién es quién»
+npcs = []
+ul_npcs = re.search(r'<ul class="npcs">(.*?)</ul>\s*</section>', frag, re.S)
+for li in re.findall(r'<li style="--tono:(#[0-9A-Fa-f]{6})">(.*?)</ul></li>', ul_npcs.group(1), re.S):
+    tono, cuerpo_li = li
+    nom = re.search(r'<span class="nom">([^<]+)</span>', cuerpo_li).group(1)
+    rol = re.search(r'<span class="rol">([^<]+)</span>', cuerpo_li).group(1)
+    hace = re.search(r'<p class="hace">(.*?)</p>', cuerpo_li, re.S).group(1)
+    menu = re.findall(r"<li>(.*?)</li>", cuerpo_li.split('<ul class="menu">', 1)[1], re.S)
+    # el retrato y el modelo 3D se leen del <template> de «Quién es quién» (no se duplican aquí)
+    npcs.append(dict(n=nom, rol=rol, tono=tono, hace=hace.strip(), menu=[m.strip() for m in menu]))
+assert len(npcs) >= 8, "no encuentro los NPC de «Quién es quién»"
+
 css = re.search(r"<style>(.*?)</style>", frag, re.S).group(1)
 scripts = re.findall(r"<script>(.*?)</script>", frag, re.S)
 utiles = [x for x in scripts if ".subnav" not in x]  # el de las pestañas ya no hace falta
@@ -133,13 +157,13 @@ for m in re.finditer(r"<section[^>]*>\s*<h2[^>]*>(.*?)</h2>(.*?)</section>", fra
         intro = corta(parrafos.pop(0), 230) if parrafos else ""
     lis = []
     ul = re.search(r'<ul class="(reglas|consejos|objetos[^"]*)">(.*?)</ul>', cuerpo, re.S)
-    npcs = re.findall(r'<span class="nom">([^<]+)</span><span class="rol">([^<]+)</span>', cuerpo)
+    roles = re.findall(r'<span class="nom">([^<]+)</span><span class="rol">([^<]+)</span>', cuerpo)
     if ul:
         for li in re.findall(r"<li[^>]*>(.*?)</li>", ul.group(2), re.S):
             b = re.search(r"<strong>(.*?)</strong>", li) or re.search(r'<span class="nom"[^>]*>(.*?)</span>', li)
             lis.append(corta(texto(b.group(1) if b and ul.group(1) != "reglas" else li), 120))
-    elif npcs:
-        lis = [f"{n} · {r}" for n, r in npcs]
+    elif roles:
+        lis = [f"{n} · {r}" for n, r in roles]
     elif parrafos:
         lis = [corta(x, 120) for x in parrafos[:3]]
     subs = [texto(x) for x in re.findall(r"<h3[^>]*>(.*?)</h3>", cuerpo, re.S)]
@@ -154,9 +178,9 @@ assert not falta, f"temas que ya no están en calamity.html: {falta}"
 
 out = ["<!-- generado por tools/importar_calamity.py desde EDERUS/calamity.html: no editar a mano -->",
        f"<style>{css}</style>",
-       '<script type="application/json" id="cal-temas">' + json.dumps(dict(cats=[dict(id=a, t=b, d=c) for a, b, c in CATS], temas=temas), ensure_ascii=False).replace("</", "<\\/") + "</script>",
+       '<script type="application/json" id="cal-temas">' + json.dumps(dict(cats=[dict(id=a, t=b, d=c) for a, b, c in CATS], temas=temas, npcs=npcs), ensure_ascii=False).replace("</", "<\\/") + "</script>",
        f'<template id="cal-fichas">{fichas}</template>',
        *plantillas,
        *[f'<script type="text/plain" data-cal-js>{x}</script>' for x in utiles]]
 DESTINO.write_text("\n".join(out) + "\n", encoding="utf-8")
-print(f"OK · {DESTINO.relative_to(RAIZ)} ({DESTINO.stat().st_size // 1024} KB) · {len(temas)} temas · escamas de Carpa {escamas}")
+print(f"OK · {DESTINO.relative_to(RAIZ)} ({DESTINO.stat().st_size // 1024} KB) · {len(temas)} temas · {len(npcs)} NPC · escamas de Carpa {escamas}")
