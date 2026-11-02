@@ -560,7 +560,7 @@ const B = {
     ${sect('Respuestas rápidas', `<div class="answers rv">${answers()}</div>`, '§0', 'Lo que más se pregunta, sacado de los datos. Toca para ir.')}
     ${sect('El número uno', `<div class="podium rv">${champ('Armadura · evento', topA[0], fmt(topA[0].poder), 'de poder', ico(topA[0].icon, topA[0].dye, 1), 'tl-armaduras', 'a')}${(v => v && v !== topA[0] ? champ('Armadura · fija', v, fmt(v.poder), 'de poder', ico(v.icon, v.dye, 1), 'tl-armaduras', 'a', 'Set top') : '')(D.armaduras.find(x => x.id === 'ARTORIA_VEYRA_ARMOR'))}${champ('Arma', topW[0], fmt(topW[0].poder), 'de poder', ico(topW[0].icon, null, 1), 'tl-armas', 'w')}${champ('Anomalía', topN[0], fmtK(topN[0].vida), 'de vida', face(topN[0]), 'tl-anomalias', 'n')}</div>`, '§1', 'Lo primero de cada tier list. Toca para abrir su ficha.')}
     ${sect('Índice', `<nav class="toc rv" aria-label="Índice">${toc}</nav>`, '§2', 'Tier lists, base de datos y sistemas del servidor.')}
-    ${sect('Cómo se usa', `<div class="tips rv">${[['Toca cualquier objeto', 'Sets, armas y anomalías abren su ficha con estadísticas, piezas y habilidades.'], [`Busca con ${MAC ? '⌘' : 'Ctrl'} K`, 'Un buscador para todo: premios, encantamientos, mobs, tags y tiendas.'], ['Compara hasta 4', 'Añade sets o armas al comparador desde su ficha y míralos lado a lado.'], ['Comparte el enlace', 'Cada ficha tiene su propia dirección. Cópiala y pásala por Discord.']].map(([t, s], i) => `<div class="tip"><span class="tip__n">${pad(i + 1)}</span><b>${t}</b><span>${s}</span></div>`).join('')}</div>`, '§3')}`;
+    `;
     $$('[data-go]', el).forEach(b => b.addEventListener('click', () => { location.hash = b.dataset.go; }));
   },
   'tl-armaduras'(el) {
