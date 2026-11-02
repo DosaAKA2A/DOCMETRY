@@ -120,15 +120,16 @@ main{min-width:0;padding:0 var(--gut)}
 .view.ent .split-word>span{transform:none}
 
 /* ---------- secciones ---------- */
-.sect{display:grid;gap:20px}
+.sect{display:grid;gap:20px;content-visibility:auto;contain-intrinsic-size:auto 900px}
 .sect__h{display:grid;grid-template-columns:auto 1fr;align-items:end;gap:6px 20px;padding-bottom:12px;border-bottom:1px solid var(--stone)}
 .sect__h h2{margin:0;display:flex;align-items:baseline;gap:14px;font:900 clamp(24px,2.4vw,34px)/.95 var(--f-head);font-stretch:75%;text-transform:uppercase}
 .sect__h h2 small{font:400 11px var(--f-px);color:var(--az);transform:translateY(-6px)}
 .sect__h p{margin:0;justify-self:end;text-align:right;color:var(--muted);font-size:14px;max-width:52ch}
 
 /* aparición: barrido en escalones */
-.rv{clip-path:inset(0 0 100% 0);transition:clip-path .55s steps(7,end);transition-delay:var(--d,0ms)}
-.rv.is-in{clip-path:inset(-20px -20px -40px -20px)}
+/* rendimiento (02/11): la aparición va con opacidad y desplazamiento (los compone la GPU), no con clip-path, que repinta */
+.rv{opacity:0;transform:translateY(10px);transition:opacity .3s steps(4,end),transform .3s steps(4,end);transition-delay:var(--d,0ms)}
+.rv.is-in{opacity:1;transform:none}
 .glass{border-radius:var(--r);overflow:hidden;background:var(--obs-2);border:1px solid var(--stone);position:relative}
 .spot{transition:transform .12s var(--step),box-shadow .12s var(--step),border-color .12s}
 
@@ -149,7 +150,7 @@ main{min-width:0;padding:0 var(--gut)}
 .slot::after{content:"";position:absolute;inset:0;background:transparent;pointer-events:none}
 .slot:hover::after,.tt:hover .slot::after,.tt:focus-visible .slot::after{background:color-mix(in srgb,var(--blanco) 22%,transparent)}
 /* EX: marco dorado que se enciende cada pocos segundos (sustituye al halo morado) */
-.glint{border-color:var(--ex-sombra) var(--ex) var(--ex) var(--ex-sombra);animation:brilloEX 4.5s ease-in-out infinite}
+.glint{border-color:var(--ex-sombra) var(--ex) var(--ex) var(--ex-sombra);animation:brilloEX 4.5s step-end infinite}
 @keyframes brilloEX{0%,70%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ex-luz) 0%,transparent),inset 0 0 0 0 color-mix(in srgb,var(--ex-suave) 0%,transparent)}
   80%{box-shadow:0 0 14px 2px color-mix(in srgb,var(--ex-luz) 85%,transparent),inset 0 0 10px 1px color-mix(in srgb,var(--ex-suave) 50%,transparent);border-color:var(--ex-claro) var(--ex-destello) var(--ex-destello) var(--ex-claro)}
   90%{box-shadow:0 0 6px 1px color-mix(in srgb,var(--ex-luz) 35%,transparent),inset 0 0 4px 0 color-mix(in srgb,var(--ex-suave) 20%,transparent)}}
@@ -464,7 +465,7 @@ table.mx{width:100%;border-collapse:separate;border-spacing:0;font-size:15px;min
 .scrim{position:fixed;inset:0;z-index:80;background:color-mix(in srgb,var(--negro) 60%,transparent);opacity:0;visibility:hidden;transition:opacity .12s steps(2,end),visibility .12s}
 .scrim.on{opacity:1;visibility:visible}
 .dr{--c:var(--az);position:fixed;top:0;right:0;bottom:0;z-index:90;width:min(520px,100%);display:flex;flex-direction:column;background:var(--ficha);
-  box-shadow:inset 0 0 0 3px var(--tip-b1),inset 0 0 0 6px var(--tip-b2),-20px 0 60px color-mix(in srgb,var(--negro) 60%,transparent);transform:translateX(104%);transition:transform .18s steps(4,end),visibility 0s .18s;visibility:hidden;will-change:transform;contain:layout paint}
+  box-shadow:inset 0 0 0 3px var(--tip-b1),inset 0 0 0 6px var(--tip-b2),-8px 0 0 color-mix(in srgb,var(--negro) 55%,transparent);transform:translateX(104%);transition:transform .18s steps(4,end),visibility 0s .18s;visibility:hidden;will-change:transform;contain:layout paint}
 .dr.on{transform:none;visibility:visible;transition:transform .18s steps(4,end),visibility 0s}
 /* con la ficha abierta, el fondo deja de animarse (los contornos EX repintaban filtros sin parar) */
 html.dr-open .glint,html.dr-open .tt .slot.glint .ic,html.dr-open .tt .slot.glint .face,html.dr-open .marquee__track{animation-play-state:paused}
@@ -665,7 +666,7 @@ main{view-transition-name:main-view}
 .tt:hover .slot .ic,.tt:hover .slot .face,.tt:focus-visible .slot .ic,.tt:focus-visible .slot .face{transform:scale(1.1) rotate(-3deg)}
 /* EX: contorno dorado que se enciende cada pocos segundos */
 .tt .slot.glint{animation:none;box-shadow:none;border:0}
-.tt .slot.glint .ic,.tt .slot.glint .face{--o:var(--ex-medio);animation:brilloContornoEX 4.5s ease-in-out infinite}
+.tt .slot.glint .ic,.tt .slot.glint .face{--o:var(--ex-medio);animation:brilloContornoEX 4.5s step-end infinite}
 @keyframes brilloContornoEX{0%,70%,100%{--o:var(--ex-oscuro)}80%{--o:var(--ex-destello)}90%{--o:var(--ex)}}
 @property --o{syntax:'<color>';inherits:true;initial-value:#c58cff}
 @media (prefers-reduced-motion:reduce){.tt .slot.glint .ic,.tt .slot.glint .face{animation:none}}

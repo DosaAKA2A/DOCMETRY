@@ -244,14 +244,14 @@ function table(el, cols, rows, opt = {}) {
 
 // ---------- tier list
 function tierlist(el, items, o) {
-  const tiers = o.tiers, groups = o.groups; let q = '', off = new Set(), offT = new Set(), cols = true, first = true;
+  const tiers = o.tiers, groups = o.groups; let q = '', off = new Set(), offT = new Set(), cols = false, first = true;  // Dosa 02/11: «Todo junto» por defecto
   const sorted = [...items].sort((a, b) => o.value(b) - o.value(a));
   const fv = o.fmtv || fmt;
   const rng = t => { const v = sorted.filter(i => i.tier === t).map(o.value); if (!v.length) return 'sin entradas'; const mn = Math.min(...v), mx = Math.max(...v); return mn === mx ? fv(mn) : fv(mn) + ' – ' + fv(mx); };
   const cntT = t => sorted.filter(i => i.tier === t).length;
   el.innerHTML = `<div class="tlbar">
     <div class="tlbar__row"><label class="field">${SVG.search}<input type="search" placeholder="Buscar por nombre…" aria-label="Buscar en la tier list"></label>
-      <div class="seg" role="group" aria-label="Columnas"><button type="button" class="on" data-cols="1">Por ${esc(o.groupLabel)}</button><button type="button" data-cols="0">Todo junto</button></div>
+      <div class="seg" role="group" aria-label="Columnas"><button type="button" class="on" data-cols="0">Todo junto</button><button type="button" data-cols="1">Por ${esc(o.groupLabel)}</button></div>
       <span class="cnt"></span><button type="button" class="icon-btn reset">${SVG.reset}Restablecer</button></div>
     <div class="tlbar__row"><span class="lab">Tier</span><div class="chips">${tiers.map(t => `<button type="button" class="tchip on" data-t="${t}" style="--tc:${TC[t]}" aria-pressed="true" title="${cntT(t)} en tier ${t}">${t}</button>`).join('')}</div>
       <span class="lab">${esc(o.groupLabel)}</span><div class="chips">${groups.map(g => `<button type="button" class="tg on" data-g="${esc(g)}" aria-pressed="true">${esc(g)} <small>${sorted.filter(i => o.group(i) === g).length}</small></button>`).join('')}</div></div>
@@ -755,7 +755,7 @@ function show(id) {
     document.title = id === 'inicio' ? 'EDERUSDEX | EDERUS' : VI[id].t + ' · EDERUSDEX | EDERUS';
   };
   current = id;
-  if (!first && document.startViewTransition && !RM) document.startViewTransition(run); else run();
+  run();  // sin startViewTransition: la «foto» de la página entera en cada cambio de vista era lo que más pesaba
 }
 function route() {
   const h = decodeURIComponent(location.hash.slice(1));
