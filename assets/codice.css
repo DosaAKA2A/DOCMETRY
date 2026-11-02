@@ -743,6 +743,8 @@ main{view-transition-name:main-view}
 .pzc{display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 8px 10px;text-align:center;cursor:pointer;color:inherit;font:inherit;background:var(--obs-2);border:1px solid var(--stone);border-radius:4px;transition:border-color .12s,background .12s}
 .pzc:hover,.pzc:focus-visible{border-color:var(--tip-b1);background:var(--obs-3)}
 .pzc[hidden]{display:none}
+.pzc.unico{border:2px solid var(--blanco)}
+.pzc.unico:hover,.pzc.unico:focus-visible{border-color:var(--blanco)}
 .pzc__slot{position:relative;width:58px;height:58px}
 .pzc__slot .ic{width:40px;height:40px}
 .pz__q{position:absolute;right:4px;bottom:1px;font:400 12px var(--f-px);color:var(--blanco);text-shadow:2px 2px 0 var(--gris-mc)}

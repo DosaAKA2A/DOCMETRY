@@ -348,7 +348,7 @@ const RAR_T = { Común: 'D', 'Poco común': 'C', Raro: 'B', Épico: 'A', Legenda
 // Dosa 02/11: cuadrícula de casillas (sin halo) y el lore en el recuadro al pasar el ratón
 let PZX = null;
 function premioCelda(f, i) {
-  return `<button type="button" class="pzc" data-tip="p:${i}"${f.go ? ` data-go="${esc(f.go)}"` : ''}><span class="slot pzc__slot">${f.img ? `<span class="ic lg"><img alt="" src="${f.img}"></span>` : ico(f.ic, null, 1)}${f.q ? `<b class="pz__q">${esc(f.q)}</b>` : ''}</span>
+  return `<button type="button" class="pzc${f.r === 'Único' ? ' unico' : ''}" data-tip="p:${i}"${f.go ? ` data-go="${esc(f.go)}"` : ''}><span class="slot pzc__slot">${f.img ? `<span class="ic lg"><img alt="" src="${f.img}"></span>` : ico(f.ic, null, 1)}${f.q ? `<b class="pz__q">${esc(f.q)}</b>` : ''}</span>
     <b class="pzc__n" style="${f.c ? `color:${f.c}` : ''}">${esc(f.n)}</b><span class="pzc__p">${fmt(f.p)} %</span></button>`;
 }
 function premioTip(f) {
@@ -359,10 +359,12 @@ function premioTip(f) {
     ${r('Probabilidad', fmt(f.p) + ' %')}${PZX && PZX.extra ? r('Por captura', PZX.extra(f)) : ''}${f.go ? '<span class="l">Clic para ver su ficha</span>' : ''}`;
 }
 function openPremios(o) {
-  const L = o.lista || []; PZX = o; BYID.p = new Map(L.map((f, i) => [String(i), f]));
+  // Dosa 02/11: primero las únicas (borde blanco), luego de la rareza más alta a la más baja; dentro, de la más rara a la más probable
+  const ORD = { Único: 0, Inmortal: 1, Ancestral: 2, Mítico: 3, Legendario: 4, Épico: 5, Raro: 6, 'Poco común': 7, Común: 8 };
+  const L = [...(o.lista || [])].sort((a, b) => (ORD[a.r] ?? 9) - (ORD[b.r] ?? 9) || a.p - b.p); PZX = o; BYID.p = new Map(L.map((f, i) => [String(i), f]));
   openDrawer({ kind: o.kind, title: o.title, art: ico(o.ic, null, 1), color: o.color, wide: true, link: o.link, sub: o.sub,
     extra: `<div class="pz-wrap"><label class="field pz-f">${SVG.search}<input type="search" placeholder="Buscar entre ${L.length} premios…" aria-label="Buscar premio"></label>
-      <p class="mut sm pz-ayuda">Pasa el ratón por un premio para ver su lore. Están ordenados del más probable al más raro.</p>
+      <p class="mut sm pz-ayuda">Pasa el ratón por un premio para ver su lore. Primero las únicas (borde blanco) y después de la rareza más alta a la más baja.</p>
       <div class="pz-grid">${L.map(premioCelda).join('')}</div></div>` });
   hydrate(dr);
   const q = $('.pz-f input', dr), cells = $$('.pzc', dr);
