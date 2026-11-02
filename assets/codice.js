@@ -132,11 +132,7 @@ function countUp(el) {
   const step = now => { const p = Math.min(1, (now - t0) / dur), e = p === 1 ? 1 : 1 - Math.pow(2, -10 * p); el.textContent = NF.format(Math.round(to * e)); if (p < 1) requestAnimationFrame(step); };
   requestAnimationFrame(step);
 }
-// foco que sigue al ratón en tarjetas .spot
-document.addEventListener('pointermove', e => {
-  const c = e.target.closest && e.target.closest('.spot'); if (!c) return;
-  const r = c.getBoundingClientRect(); c.style.setProperty('--mx', (e.clientX - r.left) + 'px'); c.style.setProperty('--my', (e.clientY - r.top) + 'px');
-}, { passive: true });
+// (02/11) fuera el foco que seguía al ratón: repintaba la tarjeta a cada movimiento y no se usaba en el CSS
 // ---------- vistas
 const VIEWS = [
   { g: 'Empieza aquí', id: 'inicio', t: 'Inicio', ic: 'knowledge_book' },
