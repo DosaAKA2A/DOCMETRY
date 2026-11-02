@@ -139,9 +139,9 @@ function countUp(el) {
 // ---------- vistas
 const VIEWS = [
   { g: 'Empieza aquí', id: 'inicio', t: 'Inicio', ic: 'knowledge_book' },
-  { g: 'Tier lists', id: 'tl-armaduras', t: 'Armaduras', ic: 'netherite_chestplate', n: () => D.armaduras.length, d: 'El poder de cada set con la fórmula de la guía, de EX a D.', w: 'w6' },
-  { g: 'Tier lists', id: 'tl-armas', t: 'Armas', ic: 'netherite_sword', n: () => D.armas.length, d: 'Golpe medio con críticos, convertido en poder.', w: 'w3' },
-  { g: 'Tier lists', id: 'tl-anomalias', t: 'Anomalías', ic: 'nether_star', n: () => D.anomalias.length, d: 'Vida × daño medio de cada anomalía.', w: 'w3' },
+  { g: 'Tier lists', id: 'tl-armaduras', t: 'Armaduras', ic: 'netherite_chestplate', n: () => D.armaduras.length, d: 'Todos los sets, del más fuerte al más débil.', w: 'w6' },
+  { g: 'Tier lists', id: 'tl-armas', t: 'Armas', ic: 'netherite_sword', n: () => D.armas.length, d: 'Todas las armas, de la más fuerte a la más débil.', w: 'w3' },
+  { g: 'Tier lists', id: 'tl-anomalias', t: 'Anomalías', ic: 'nether_star', n: () => D.anomalias.length, d: 'Todas las anomalías, de la más difícil a la más fácil.', w: 'w3' },
   { g: 'Base de datos', id: 'cajas', t: 'Cajas y premios', ic: 'tripwire_hook', n: () => D.premios.length, d: 'Cada caja, sus premios y la probabilidad de cada uno.', w: 'w4' },
   { g: 'Base de datos', id: 'encantamientos', t: 'Encantamientos', ic: 'enchanted_book', n: () => D.encantamientos.length, d: 'Los de AdvancedEnchantments con su efecto al nivel máximo.', w: 'w4' },
   { g: 'Base de datos', id: 'mazmorras', t: 'Mazmorras', ic: 'trial_key', hot: 'Jefes', hotc: 'oro', n: () => (D.mazmorras || []).length, d: 'Requisitos, jefes, botín, cofres, encargos y tiendas de cada mazmorra.', w: 'w4' },
@@ -457,7 +457,7 @@ function anDetail(a) {
   const tab = a.habs && a.habs.length ? `<div><h4>Habilidades · daño por golpe</h4><p class="mut sm" style="margin:0 0 10px">×1 = valor de diseño del código (nivel 1). ×${fmt(N)} = con el multiplicador de su ficha, que es lo que pega hoy en el Survival. Daño antes de armadura y en la fase 1 (las fases altas suben entre un 10 % y un 60 %).</p><div class="ht-wrap"><table class="ht"><thead><tr><th>Habilidad</th><th>Fase</th><th class="n">Recarga</th><th class="n">Ajuste</th><th class="n">×1</th><th class="n">×${fmt(N)}</th></tr></thead><tbody>${rows}</tbody></table></div></div>` : '<p class="mut sm">Esta anomalía no tiene lista de habilidades en el código de EDM.</p>';
   openDrawer({ kind: 'Anomalía · ' + a.clase, title: a.nombre, art: face(a), color: TC[a.tier], link: 'tl-anomalias/' + a.id, wide: true,
     sub: `<span class="pill tier-${a.tier}">${a.tier}</span> Puesto ${rankOf(D.anomalias, a, 'dificultad')} de ${D.anomalias.length} por puntuación`,
-    bars: [['Vida', a.vida, m.vida, fmt(a.vida), a.vida_base ? `${fmt(a.vida_base)} ×${fmt(a.vida_x)}` : ''], ['Daño medio por golpe', a.dano_real, m.dano_real, x(a.dano_real), `${x(a.dano_base)} ×${fmt(N)}`], ['Puntuación (vida × daño medio)', a.dificultad, m.dificultad]],
+    bars: [['Vida', a.vida, m.vida, fmt(a.vida), a.vida_base ? `${fmt(a.vida_base)} ×${fmt(a.vida_x)}` : ''], ['Daño medio por golpe', a.dano_real, m.dano_real, x(a.dano_real), `${x(a.dano_base)} ×${fmt(N)}`], ['Puntuación', a.dificultad, m.dificultad]],
     kv: [['Clase', esc(a.clase)], ['Tier', `<span class="pill tier-${a.tier}">${a.tier}</span>${fmt(a.dificultad)}`], ['Vida', a.vida_base ? `${fmt(a.vida_base)} → ${fmt(a.vida)}` : fmt(a.vida)], ['Daño medio', `${x(a.dano_base)} → ${x(a.dano_real)}`], ['Bioma', esc(a.bioma)], ['MobCoins por participante', fmt(a.mobcoins)], ['Experiencia', fmt(a.exp)], ['Objetos en su botín', fmt(a.botin)], ['Habilidades', fmt(a.habilidades)]],
     extra: tab });
 }
@@ -567,21 +567,21 @@ const B = {
     $$('[data-go]', el).forEach(b => b.addEventListener('click', () => { location.hash = b.dataset.go; }));
   },
   'tl-armaduras'(el) {
-    el.innerHTML = head('tl-armaduras', 'Tier list de armaduras', 'Poder del set con la fórmula de la guía. EX ≥ 6.800 (Veyra, el set top) · S ≥ 5.080 · A ≥ 4.000 · B ≥ 3.000 · C ≥ 2.000. Toca un set para ver sus piezas.', tierStats(D.armaduras, ['EX', 'S', 'A', 'B', 'C', 'D'])) +
+    el.innerHTML = head('tl-armaduras', 'Tier list de armaduras', 'Los sets de armadura del Survival, de más a menos fuertes. Toca un set para ver sus piezas.', tierStats(D.armaduras, ['EX', 'S', 'A', 'B', 'C', 'D'])) +
       `<div id="tl"></div>` + sect('Todas las armaduras', '<div id="tb" class="rv"></div>', 'DB', 'Pulsa una fila para abrir la ficha. Ordena tocando la cabecera.') + fichas('armaduras');
     const G = ['Anomalía', 'Mazmorra', 'Cajas y eventos', 'VIP', 'Calamity', 'Playtime (God Kit)'];
     tierlist($('#tl', el), D.armaduras.filter(s => G.includes(s.origen)), { groups: G, tiers: ['EX', 'S', 'A', 'B', 'C', 'D'], group: s => s.origen, groupLabel: 'origen', name: 'nombre', value: s => s.poder, icon: s => ico(s.icon, s.dye, 1), detail: setDetail, tip: 'a' });
     table($('#tb', el), [{ k: 'nombre', l: 'Set', render: (r, re) => `<span class="row">${ico(r.icon, r.dye)}<b>${hl(r.nombre, re)}</b></span>` }, { k: 'origen', l: 'Origen' }, { k: 'tier', l: 'Tier', t: 'tier' }, { k: 'poder', l: 'Poder', t: 'bar' }, { k: 'armadura', l: 'Armadura', t: 'num' }, { k: 'dureza', l: 'Dureza', t: 'num' }, { k: 'vida', l: 'Vida extra', t: 'num' }], D.armaduras, { filters: ['origen', 'tier'], sort: 'poder', onRow: setDetail, name: 'armaduras' });
   },
   'tl-armas'(el) {
-    el.innerHTML = head('tl-armas', 'Tier list de armas', 'Poder = (golpe medio − 1) × 60, con críticos (MythicLib ×2 + el % del arma). S ≥ 4.600 · A ≥ 3.000 · B ≥ 1.900 · C ≥ 1.000. Los arcos no cuentan el encantamiento Poder.', tierStats(D.armas, ['EX', 'S', 'A', 'B', 'C', 'D'])) +
+    el.innerHTML = head('tl-armas', 'Tier list de armas', 'Las armas del Survival, de más a menos fuertes. Toca un arma para ver su ficha.', tierStats(D.armas, ['EX', 'S', 'A', 'B', 'C', 'D'])) +
       `<div id="tl"></div>` + sect('Todas las armas', '<div id="tb" class="rv"></div>', 'DB', 'Incluye las de tier D, que no salen en la tier list.') + fichas('armas');
     const G = ['Espada', 'Hacha', 'Lanza', 'Tridente', 'Arco', 'Ballesta', 'Mazo'];
     tierlist($('#tl', el), D.armas.filter(a => a.tier !== 'D'), { groups: G.filter(g => D.armas.some(a => a.clase === g)), tiers: ['EX', 'S', 'A', 'B', 'C'], group: a => a.clase, groupLabel: 'clase', name: 'nombre', value: a => a.poder, icon: a => ico(a.icon, null, 1), detail: armaDetail, tip: 'w' });
     table($('#tb', el), [{ k: 'nombre', l: 'Arma', render: (r, re) => `<span class="row">${ico(r.icon)}<b>${hl(r.nombre, re)}</b></span>` }, { k: 'clase', l: 'Clase' }, { k: 'origen', l: 'Origen' }, { k: 'tier', l: 'Tier', t: 'tier' }, { k: 'dano', l: 'Daño', t: 'num' }, { k: 'critico', l: 'Crítico', t: 'num', u: ' %' }, { k: 'max', l: 'Daño crítico', t: 'num' }, { k: 'poder', l: 'Poder', t: 'bar' }], D.armas, { filters: ['clase', 'origen', 'tier'], sort: 'poder', onRow: armaDetail, name: 'armas' });
   },
   'tl-anomalias'(el) {
-    el.innerHTML = head('tl-anomalias', 'Tier list de anomalías', 'Puntuación = vida × daño medio por golpe (media de sus habilidades con el multiplicador de su ficha). ♥ vida · ⚔ daño medio. Pulsa una para ver todas sus habilidades a ×1 y a su multiplicador.', tierStats(D.anomalias, ['S', 'A', 'B', 'C', 'D'])) +
+    el.innerHTML = head('tl-anomalias', 'Tier list de anomalías', 'Las anomalías, de más a menos difíciles. ♥ vida · ⚔ daño medio por golpe. Pulsa una para ver todas sus habilidades.', tierStats(D.anomalias, ['S', 'A', 'B', 'C', 'D'])) +
       `<div id="tl"></div>` + sect('Comparativa', '<div id="tb" class="rv"></div>', 'DB') + fichas('anomalias');
     tierlist($('#tl', el), D.anomalias, { groups: ['General', 'Monarca', 'Dios'], tiers: ['S', 'A', 'B', 'C', 'D'], group: a => a.clase, groupLabel: 'clase', fmtv: fmtK, name: 'nombre', value: a => a.dificultad, label: a => `<span title="Vida">♥ ${fmtK(a.vida)}</span><span title="Daño medio por golpe">⚔ ${fmt(Math.round(a.dano_real))}</span>`, icon: a => face(a), detail: anDetail, tip: 'n' });
     table($('#tb', el), [{ k: 'nombre', l: 'Anomalía', render: (r, re) => `<span class="row">${face(r)}<b>${hl(r.nombre, re)}</b></span>` }, { k: 'clase', l: 'Clase' }, { k: 'tier', l: 'Tier', t: 'tier' }, { k: 'vida', l: 'Vida', t: 'bar' }, { k: 'dano', l: 'Daño ×', t: 'num' }, { k: 'dano_base', l: 'Daño medio ×1', t: 'num' }, { k: 'dano_real', l: 'Daño medio real', t: 'bar' }, { k: 'dificultad', l: 'Puntuación', t: 'num' }, { k: 'mobcoins', l: 'MobCoins', t: 'num' }, { k: 'exp', l: 'EXP', t: 'num' }, { k: 'botin', l: 'Objetos', t: 'num' }, { k: 'bioma', l: 'Bioma' }], D.anomalias, { filters: ['clase', 'tier'], sort: 'dificultad', onRow: anDetail, name: 'anomalias' });
