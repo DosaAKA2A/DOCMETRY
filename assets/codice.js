@@ -739,7 +739,10 @@ function chartPlaytime(box) {
     const i = Math.max(0, Math.min(P.length - 1, Math.round((px - L) / (W - L - R) * (P.length - 1)))), p = P[i];
     cx.setAttribute('x1', pts[i][0]); cx.setAttribute('x2', pts[i][0]); cd.setAttribute('cx', pts[i][0]); cd.setAttribute('cy', pts[i][1]);
     tip.innerHTML = `<b>Nivel ${p.nivel}</b><div><span>Horas</span><span>${fmt(p.horas)}</span></div><div><span>Dinero</span><span>${fmt(p.dinero)}</span></div><div><span>MobCoins</span><span>${fmt(p.mobcoins)}</span></div><div><span>Niveles de XP</span><span>${fmt(p.exp)}</span></div>${p.extras ? `<div><span>Extras</span><span>${esc(p.extras)}</span></div>` : ''}`;
-    const wr = wrap.getBoundingClientRect(); tip.style.left = Math.max(80, Math.min(wr.width - 80, pts[i][0] / W * wr.width)) + 'px'; tip.style.top = (pts[i][1] / H * wr.height) + 'px';
+    const wr = wrap.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight, tpx = pts[i][0] / W * wr.width, tpy = pts[i][1] / H * wr.height;
+    // Dosa 02/11: que el recuadro no se salga de la gráfica (arriba del todo se pone debajo del punto; en los bordes, hacia dentro)
+    tip.style.left = Math.max(tw / 2 + 8, Math.min(wr.width - tw / 2 - 8, tpx)) + 'px'; tip.style.top = tpy + 'px';
+    tip.style.transform = tpy - th - 14 < 0 ? 'translate(-50%, 16px)' : 'translate(-50%, calc(-100% - 14px))';
   };
   svg.addEventListener('pointermove', move); svg.addEventListener('pointerdown', move);
 }
