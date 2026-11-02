@@ -850,3 +850,6 @@ main{view-transition-name:main-view}
 .rail a.hot.oro.on{background:var(--mc-6);color:var(--negro);box-shadow:none}
 .rail a.hot.oro .hot__tag{background:var(--mc-6)}
 .rail a.hot.oro.on .hot__tag{background:var(--negro);color:var(--mc-6)}
+
+/* menú: la etiqueta (Hardcore, Jefes) va en su propia columna y no parte la fila en dos */
+.rail a.hot{grid-template-columns:22px 26px minmax(0,1fr) auto auto}

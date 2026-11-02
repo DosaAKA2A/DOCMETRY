@@ -1,65 +1,125 @@
 /* ==========================================================================
-   EDERUSDEX · tema ederus.com (Dosa 02/11): la misma guía, con el cristal, la
-   tipografía y los colores de https://ederus.com. Solo eso: no cambia estructura,
-   iconos ni contenido. Se carga después de codice.css en /ederus/.
+   EDERUSDEX · tema de la web y la tienda de Ederus (tienda.ederus.com)
+   Dosa 02/11: la misma guía con el cristal, la tipografía y los colores de la
+   tienda. Solo eso: no cambia estructura, iconos ni contenido. Se carga después
+   de codice.css en /ederus/. Valores sacados de store.css / shop.min.css.
    ========================================================================== */
 :root{
-  /* tipografía de ederus.com */
+  /* tipografía de la tienda */
   --f-head:"Space Grotesk","Sora",ui-sans-serif,system-ui,sans-serif;
   --f-body:"Instrument Sans",ui-sans-serif,system-ui,sans-serif;
-  --f-px:"JetBrains Mono",ui-monospace,monospace;
-  /* colores de ederus.com */
-  --obs:#0b0a16;--obs-2:#1a1730;--obs-3:#232043;--stone:#34305c;--stone-2:#4a4580;--ash:#7a779a;
-  --ink:#eaf0fa;--ink-2:#c9c5e2;--muted:#9a96b8;
-  --az:#81d0fa;--gold:#ffc94a;--gold-l:#ffd97a;
-  --tip-bg:rgba(18,16,31,.94);--tip-b1:#613cf4;--tip-b2:#34305c;
-  --hueco:#0b0a16;--hueco-luz:#34305c;--marco-luz:#4a4580;--marco-sombra:#0b0a16;--inv:#1a1730;
-  --slot:#12101f;--slot-osc:#0b0a16;--slot-medio:#1a1730;--slot-2:#12101f;--slot-3:#1a1730;
-  --ficha:#12101f;--ficha-2:#1a1730;--ficha-3:#232043;
-  --r:14px;
-  /* cristal */
-  --vidrio:linear-gradient(#ffffff0a,#0000 140px),rgba(26,23,48,.80);
-  --vidrio-borde:#34305c8c;
-  --vidrio-sombra:inset 0 1px 0 #ffffff12,0 8px 24px -8px #150a3ab3;
+  --f-px:"Space Grotesk","Sora",ui-sans-serif,system-ui,sans-serif;  /* las etiquetas pixel pasan a Space Grotesk en mayúsculas espaciadas */
+  /* colores de la tienda */
+  --void:#0b0a16;--void-2:#12101f;--surface:#1a1730;--surface-2:#232043;--line:#34305c;--line-soft:rgba(52,48,92,.55);
+  --cyan:#81d0fa;--cyan-2:#458ee7;--indigo:#462de0;--violet:#613cf4;--orchid:#eb86f9;--orchid-soft:#feb3fd;--text-dim:#9a96b8;
   --sig:linear-gradient(100deg,#458ee7,#613cf4,#eb86f9);
+  --inset-top:inset 0 1px 0 rgba(255,255,255,.07);--sh-2:0 8px 24px -8px rgba(21,10,58,.7);--sh-3:0 20px 48px -16px rgba(28,12,74,.75);
+  --obs:var(--void);--obs-2:var(--surface);--obs-3:var(--surface-2);--stone:var(--line);--stone-2:#4a4580;--ash:#7a779a;
+  --ink:#eaf0fa;--ink-2:#c9c5e2;--muted:var(--text-dim);
+  --az:var(--cyan);--gold:#ffc94a;--gold-l:#ffd97a;
+  --tip-bg:rgba(18,16,31,.96);--tip-b1:var(--violet);--tip-b2:var(--line);
+  --hueco:var(--void);--hueco-luz:var(--line);--marco-luz:#4a4580;--marco-sombra:var(--void);--inv:var(--surface);
+  --slot:var(--void-2);--slot-osc:var(--void);--slot-medio:var(--surface);--slot-2:var(--void-2);--slot-3:var(--surface);
+  --ficha:var(--void-2);--ficha-2:var(--surface);--ficha-3:var(--surface-2);
+  --r:12px;
+  /* el panel de la tienda (.tz-panel): relleno casi opaco + borde en degradado azul → violeta → orquídea */
+  --panel-fondo:linear-gradient(180deg,rgba(26,23,48,.92),rgba(18,16,31,.92));
+  --panel-borde:linear-gradient(150deg,rgba(69,142,231,.42),rgba(97,60,244,.22),rgba(235,134,249,.34));
 }
-html,body{background:#0b0a16}
-body{font-family:var(--f-body);letter-spacing:0}
+html,body{background:var(--void)}
+body{font-family:var(--f-body);color:var(--ink)}
 
-/* fondo de ederus.com: rayos de color, rejilla, viñeta y borde orquídea (fijo, sin animar) */
+/* fondo de la web: rayos de color, rejilla y viñeta (fijo, sin animar) */
 .bg-ederus{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
 .bg-ederus>*{position:absolute;inset:0}
 .bg-ederus .rays{height:680px;bottom:auto;background-image:linear-gradient(98deg,#0000 8%,#613cf41a 13%,#0000 18% 27%,#eb86f914 32%,#0000 38% 49%,#458ee717 55%,#0000 61% 70%,#feb3fd0f 75%,#0000 80% 88%,#613cf414 92%,#0000 97%)}
 .bg-ederus .grid{background-image:linear-gradient(90deg,#9a96b80d 1px,#0000 0),linear-gradient(#9a96b80d 1px,#0000 0);background-size:72px 72px;-webkit-mask-image:radial-gradient(78% 58% at 50% 0,#000 15%,#0000 78%);mask-image:radial-gradient(78% 58% at 50% 0,#000 15%,#0000 78%)}
-.bg-ederus .glow{background:radial-gradient(60% 50% at 80% 0,#613cf42e,#0000 70%),radial-gradient(50% 40% at 0 30%,#458ee71f,#0000 70%),radial-gradient(40% 40% at 100% 90%,#eb86f914,#0000 70%)}
+.bg-ederus .glow{background:radial-gradient(60% 50% at 80% 0,#613cf426,#0000 70%),radial-gradient(50% 40% at 0 30%,#458ee71a,#0000 70%)}
 .bg-ederus .vignette{background:radial-gradient(105% 75% at 50% 35%,#0000 45%,#0b0a16b8 100%)}
-.bg-ederus .edge{height:180px;bottom:auto;background-image:linear-gradient(#feb3fd73,#0000 1px),linear-gradient(#feb3fd14,#0000 34%),linear-gradient(#613cf414,#0000 100%)}
+.bg-ederus .edge{display:none}
 
-/* paneles de cristal (sin blur en las tarjetas: el blur solo en lo fijo, para no penalizar el rendimiento) */
-.glass,.cc,.vh,.tl,.tw,.tlbar,.bar,.note,.podium,.tips,.inv,.dkv,.ht-wrap,.mx-wrap,.cmp__box,.cmp__cols,.ans,.champ,.calx-ess__i,.npc,.pzc,.mz,.mz-mob,.mz-drop,.mz-enc__q,.shop,.shop__mat,.ct,.pz,.book,.tagbox{
-  background:var(--vidrio);border-color:var(--vidrio-borde);box-shadow:var(--vidrio-sombra)}
-.glass,.cc,.vh,.tl,.tw,.podium,.tips,.cmp__box,.mz,.shop,.ct,.npc,.calx-ess__i{border-radius:20px}
-.tlbar,.bar,.note,.inv,.dkv,.ht-wrap,.mx-wrap,.pzc,.mz-mob,.mz-drop,.mz-enc__q,.shop__mat,.pz,.book,.ans,.champ,.tagbox{border-radius:12px}
-.tl,.tw{overflow:hidden}
+/* ---------- paneles: el .tz-panel de la tienda ---------- */
+.glass,.cc,.vh,.tl,.tw,.tlbar,.podium,.tips,.inv,.cmp__box,.mz,.shop,.ct,.npc,.calx-ess__i,.champ,.ans,.mx-wrap,.ht-wrap,.dkv,.bar{
+  border:1px solid transparent!important;background:var(--panel-fondo) padding-box,var(--panel-borde) border-box!important;box-shadow:var(--inset-top),var(--sh-2)!important}
+.glass,.cc,.vh,.tl,.tw,.podium,.tips,.cmp__box,.mz,.shop,.ct,.npc,.calx-ess__i,.inv{border-radius:20px!important}
+.tlbar,.champ,.ans,.mx-wrap,.ht-wrap,.dkv,.bar{border-radius:14px!important}
+.vh::before{display:none}
+.cc.spot:hover,.ct:hover,.mz:hover,.pzcard:hover,.npc:hover,.ans:hover,.champ:hover{transform:translateY(-3px);box-shadow:0 0 0 1px var(--violet),var(--sh-3)!important}
+/* elementos pequeños: el estilo de los chips y casillas de la tienda */
+.pzc,.mz-mob,.mz-drop,.mz-enc__q,.shop__mat,.pz,.book,.note,.tagbox,.dkv>div{border:1px solid var(--line-soft)!important;border-radius:12px!important;background:rgba(255,255,255,.035)!important;box-shadow:none}
+.pzc:hover{border-color:var(--violet)!important;background:rgba(97,60,244,.10)!important}
+.pzc.unico{border:2px solid #fff!important}
+.note{border-left:3px solid var(--violet)!important}
 
-/* barra superior, menú lateral, panel lateral, buscador y recuadros: cristal con desenfoque, como la cabecera de ederus.com */
-.top{background:linear-gradient(180deg,#ffffff0d,#0000),rgba(11,10,22,.72);-webkit-backdrop-filter:blur(16px) saturate(1.5);backdrop-filter:blur(16px) saturate(1.5);border-bottom-color:#34305c8c;box-shadow:inset 0 1px 0 #ffffff12,0 10px 32px -18px #000000e6}
-.rail{background:linear-gradient(180deg,#ffffff08,#0000 220px),rgba(18,16,31,.78);-webkit-backdrop-filter:blur(16px) saturate(1.4);backdrop-filter:blur(16px) saturate(1.4);border-right-color:#34305c8c}
-.dr{background:linear-gradient(#ffffff0a,#0000 180px),rgba(18,16,31,.92);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);box-shadow:inset 0 1px 0 #ffffff12,-8px 0 0 #0b0a1680,inset 0 0 0 1px #613cf4}
-.mctip,.ctip{background:rgba(18,16,31,.94);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-radius:12px;box-shadow:inset 0 0 0 1px #613cf4,0 20px 48px -16px #1c0c4abf}
-.pal__box{background:#12101ff5;-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-radius:20px;border:1px solid #34305c;box-shadow:0 20px 48px -16px #1c0c4abf}
-.scrim{background:rgba(11,10,22,.6)}
+/* barra superior y menú: cristal como la cabecera de la tienda */
+.top{background:linear-gradient(180deg,rgba(255,255,255,.05),transparent),rgba(11,10,22,.78);-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15);border-bottom:1px solid var(--line-soft);box-shadow:var(--inset-top),0 10px 32px -18px #000000e6}
+.rail{background:linear-gradient(180deg,rgba(26,23,48,.85),rgba(18,16,31,.85));-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15);border-right:1px solid var(--line-soft)}
+/* menú: el elemento activo como en la tienda (degradado suave + línea a la izquierda) */
+.rail a{border-radius:10px;color:var(--ink-2)}
+.rail a:hover{background:rgba(255,255,255,.04);color:var(--ink)}
+.rail a.on{background:linear-gradient(90deg,rgba(69,142,231,.24),transparent);box-shadow:inset 2px 0 0 var(--cyan-2);color:var(--ink);font-weight:700}
+.rail a.on .n{color:var(--cyan)}
+.rail__grp{font:700 11px var(--f-head)!important;letter-spacing:.18em!important;text-transform:uppercase;color:var(--text-dim)!important}
+.rail a.hot{background:linear-gradient(90deg,rgba(226,72,63,.20),transparent);box-shadow:inset 2px 0 0 var(--cal-sangre)}
+.rail a.hot.oro{background:linear-gradient(90deg,rgba(255,201,74,.16),transparent);box-shadow:inset 2px 0 0 var(--gold)}
+.rail a.hot.on{background:linear-gradient(90deg,rgba(226,72,63,.38),transparent);color:var(--ink)}
+.rail a.hot.oro.on{background:linear-gradient(90deg,rgba(255,201,74,.30),transparent);color:var(--ink)}
+.hot__tag{border-radius:7px;font:800 9px var(--f-head)!important;letter-spacing:.06em}
 
-/* controles: pastillas y botones como los de ederus.com */
-.btn,.seg,.field,.search-trigger,.tchip,.tg,.icon-btn,.dr__x,.totop,.chip{border-radius:12px}
-.seg{background:rgba(18,16,31,.7);border-color:#34305c}
-.seg button.on,.btn--p,.tg.on::before{background:var(--sig);color:#fff}
-.btn--p{border:0}
-.rail a.on{background:var(--sig);color:#fff;border-radius:12px}
-.rail a.on .n{color:#ffffffcc}
-.rail a{border-radius:12px}
+/* panel lateral, buscador y recuadros */
+.dr{border-radius:20px 0 0 20px;background:linear-gradient(180deg,rgba(26,23,48,.96),rgba(18,16,31,.97));-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15);box-shadow:inset 0 0 0 1px rgba(97,60,244,.45),var(--sh-3)}
+.dr__hero{border-bottom-color:var(--line-soft)}
+.mctip,.ctip{border-radius:12px;background:rgba(18,16,31,.97);box-shadow:inset 0 0 0 1px rgba(97,60,244,.6),var(--sh-3)}
+.pal__box{border-radius:20px;border:1px solid transparent;background:var(--panel-fondo) padding-box,var(--panel-borde) border-box;box-shadow:var(--sh-3)}
+.scrim{background:rgba(11,10,22,.62)}
 
-/* titulares: Space Grotesk, sin condensar */
-h1,h2,h3,.cc h3,.ct h3,.mz__h h3,.dr__id h2,.npc__n,.calx-ess__i b{font-family:var(--f-head);font-stretch:100%;letter-spacing:-.03em}
-.vh h1,.mast__word h1{letter-spacing:-.04em}
-.sect__h h2{letter-spacing:-.02em}
+/* controles: como los de la tienda */
+.btn,.icon-btn,.dr__x,.totop,.search-trigger,.field{border-radius:12px}
+.btn--p,.seg button.on,.tchip.on,.tg.on::before{background:var(--sig)!important;color:#fff!important;border-color:transparent!important}
+.btn--p{box-shadow:0 0 40px -8px rgba(97,60,244,.55)}
+.seg{border-radius:12px;background:rgba(11,10,22,.72);border:1px solid var(--line)}
+.field,.search-trigger{background:rgba(11,10,22,.72);border:1px solid var(--line)}
+.tg,.tg.plain,.chip,.pill,.shop__tag,.mz__cofre,.mz__enc,.pzc__r,.mz__rank,.tz-chip{border-radius:99px}
+.tchip{border-radius:9px}
+.chip{background:rgba(255,255,255,.05);border:1px solid var(--line-soft)}
+
+/* cinta de la portada con el degradado de la marca */
+.marquee{background:var(--sig);border-bottom:0}
+.mq-item{color:#fff;border-right-color:rgba(255,255,255,.18)}
+.mq-item:hover{background:rgba(11,10,22,.45);color:#fff}
+
+/* ---------- tipografía: Space Grotesk tal como la usa la tienda ----------
+   La guía estaba maquetada con una letra condensada al 62 %: Space Grotesk es mucho más ancha,
+   así que cada titular baja de tamaño en proporción para que no se salga ni salte de línea. */
+h1,h2,h3,h4{font-family:var(--f-head);font-stretch:100%!important;letter-spacing:-.02em}
+.brand__txt b{font:700 19px/1 var(--f-head)}
+.vh h1{font:700 clamp(30px,3.6vw,52px)/1.02 var(--f-head);letter-spacing:-.03em;text-transform:none}
+.sect__h h2{font:700 clamp(20px,1.9vw,28px)/1.05 var(--f-head);letter-spacing:-.02em;text-transform:none}
+.mast__word h1{font:700 12.6cqi/.86 var(--f-head);letter-spacing:-.02em}
+.mast__lead p{font:600 clamp(19px,1.7vw,26px)/1.22 var(--f-head);letter-spacing:-.01em}
+.btn{font:700 13px var(--f-head);letter-spacing:.06em}
+.mq-item{font:700 13px var(--f-head);letter-spacing:.02em}
+.chip b{font:700 18px/1 var(--f-head)}
+.kpi .v{font:700 clamp(40px,4.4vw,70px)/.9 var(--f-head)}
+.champ h3{font:700 clamp(22px,2.2vw,32px)/1 var(--f-head);text-transform:none}
+.champ__v b{font:700 21px var(--f-head)}
+.toc h3{font:700 clamp(20px,2vw,30px)/1 var(--f-head);text-transform:none}
+.tip b{font:700 19px/1.05 var(--f-head);text-transform:none}
+.cc h3{font:700 18px/1.1 var(--f-head);text-transform:none;letter-spacing:-.01em}
+.hb b{font:700 17px var(--f-head)}
+.hb-total b{font:700 28px var(--f-head)}
+.mx th .rk b{font:700 24px/.95 var(--f-head)}
+.dr__id h2{font:700 clamp(24px,2.8vw,36px)/1 var(--f-head);text-transform:none}
+.cmp__h h2{font:700 clamp(24px,3vw,40px)/1 var(--f-head);text-transform:none}
+.cmp__cols .hd b{font:700 17px/1.05 var(--f-head);text-transform:none}
+.foot__big{font:700 clamp(30px,6vw,90px)/.9 var(--f-head)}
+.calx-ess__i b{font:700 16px/1.15 var(--f-head);text-transform:none}
+.ct h3{font:700 18px/1.1 var(--f-head);text-transform:none}
+.calx-sub{font:700 22px/1.05 var(--f-head);text-transform:none}
+.npc__n{font:700 22px/1 var(--f-head);text-transform:none}
+.mz__h h3{font:700 20px/1.05 var(--f-head);text-transform:none}
+.tl-t b{font-family:var(--f-head);font-weight:700}
+/* etiquetas pequeñas: Space Grotesk en mayúsculas espaciadas, como los rótulos de la tienda */
+.eyebrow,.crumbs,.upd,.lab,.pz__m,.pzc__p,.pzc__r,.mz__rank,.ct__more,.shop__tag,.mz__cofre,.mz__enc,.hot__tag,.sect__h h2 small,.rail .n,.tl-t small,.pz__p,.shop__mat b,.mctip,.ctip,.dr__bar .eyebrow,.chip,.calx-nav .tg small{letter-spacing:.08em}
+.mctip{font-family:var(--f-body);font-size:12.5px}
+.mctip .t{font-family:var(--f-head);font-weight:700;font-size:14px;letter-spacing:-.01em}
