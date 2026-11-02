@@ -792,3 +792,37 @@ main{view-transition-name:main-view}
 .glint,.tt .slot.glint .ic,.tt .slot.glint .face{animation:none!important}
 .tt .slot.glint .ic,.tt .slot.glint .face{--o:var(--ex)}
 .mast__rule .live::before{animation:none!important}  /* el parpadeo recalculaba estilos ~180 veces por segundo */
+
+/* mazmorras */
+.mz-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:16px}
+.mz{display:flex;flex-direction:column;gap:12px;padding:18px;border-top:3px solid var(--mc-6)}
+.mz:hover{border-color:var(--mc-6)}
+.mz__h{display:flex;gap:14px;align-items:center}
+.mz__h .ic{width:44px;height:44px;flex:none}
+.mz__h h3{margin:0 0 6px;font:900 28px/.95 var(--f-head);font-stretch:62%;text-transform:uppercase}
+.mz p{margin:0;color:var(--ink-2);font-size:14.5px;line-height:1.5}
+.mz__tropa{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+.mz__tropa span{display:grid;font-size:13px}
+.mz__tropa small{color:var(--muted);font-size:12px}
+.mz__btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+.mz__cofre,.mz__enc{height:30px;padding:0 10px;border:1px solid var(--rc,var(--stone-2));background:transparent;color:var(--rc,var(--ink));font:400 10px var(--f-px);text-transform:uppercase;cursor:pointer;border-radius:4px}
+.mz__cofre:hover,.mz__enc:hover{background:var(--obs-3)}
+.mz__cofre small,.mz__enc small{color:var(--muted);margin-left:4px}
+.mz-mob{padding:12px;background:var(--obs-2);border:1px solid var(--stone);border-radius:4px;display:grid;gap:10px}
+.mz-mob__h{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.mz-mob__d{display:flex;flex-wrap:wrap;gap:8px}
+.mz-drop{display:flex;gap:8px;align-items:center;padding:6px 10px 6px 6px;background:var(--obs);border:1px solid var(--stone);border-radius:4px}
+.mz-drop .ic{width:28px;height:28px}
+.mz-drop>span{display:grid;font-size:13px}
+.mz-drop small{color:var(--mc-e);font:400 9px var(--f-px)}
+.mz-enc{display:grid;gap:8px}
+.mz-enc__q{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:center;padding:10px 12px;background:var(--obs-2);border:1px solid var(--stone);border-radius:4px}
+.mz-enc__q .mut{grid-column:2}
+
+/* Calamity destacado en el menú (Dosa 02/11: «hazlo más llamativo») */
+.rail a.hot{color:var(--blanco);background:color-mix(in srgb,var(--cal-sangre) 16%,transparent);box-shadow:inset 3px 0 0 var(--cal-sangre)}
+.rail a.hot:hover{background:color-mix(in srgb,var(--cal-sangre) 26%,transparent)}
+.rail a.hot.on{background:var(--cal-sangre);color:var(--negro);box-shadow:none}
+.hot__tag{margin-left:auto;font:400 8px var(--f-px);text-transform:uppercase;padding:2px 5px;background:var(--cal-sangre);color:var(--negro)}
+.rail a.hot.on .hot__tag{background:var(--negro);color:var(--cal-sangre)}
+.mz__rank{display:inline-block;font:400 9px var(--f-px);text-transform:uppercase;padding:3px 7px;color:var(--negro);background:var(--mc-6)}

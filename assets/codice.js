@@ -141,14 +141,14 @@ const VIEWS = [
   { g: 'Tier lists', id: 'tl-anomalias', t: 'Anomalías', ic: 'nether_star', n: () => D.anomalias.length, d: 'Vida × daño medio de cada anomalía.', w: 'w3' },
   { g: 'Base de datos', id: 'cajas', t: 'Cajas y premios', ic: 'tripwire_hook', n: () => D.premios.length, d: 'Cada caja, sus premios y la probabilidad de cada uno.', w: 'w4' },
   { g: 'Base de datos', id: 'encantamientos', t: 'Encantamientos', ic: 'enchanted_book', n: () => D.encantamientos.length, d: 'Los de AdvancedEnchantments con su efecto al nivel máximo.', w: 'w4' },
-  { g: 'Base de datos', id: 'mazmorras', t: 'Jefes de mazmorra', ic: 'wither_skeleton_spawn_egg', n: () => D.jefes.length, d: 'Jefes y tropa de MythicMobs: vida, daño y armadura.', w: 'w4' },
+  { g: 'Base de datos', id: 'mazmorras', t: 'Mazmorras', ic: 'wither_skeleton_spawn_egg', n: () => (D.mazmorras || []).length, d: 'Requisitos, jefes, botín, cofres, encargos y tiendas de cada mazmorra.', w: 'w4' },
   { g: 'Base de datos', id: 'mascotas', t: 'Mascotas', ic: 'wolf_spawn_egg', n: () => D.mascotas.length, d: 'Mascotas de CombatPets y de dónde sale cada una.', w: 'w3' },
   { g: 'Base de datos', id: 'tags', t: 'Tags', ic: 'name_tag', n: () => D.tags.length, d: 'Todos los tags y cómo se consiguen.', w: 'w3' },
   { g: 'Sistemas', id: 'economia', t: 'Economía y MobCoins', ic: 'gold_ingot', d: 'Dónde nace el dinero, dónde muere y cuánto vale cada cosa en MobCoins.', w: 'w6' },
   { g: 'Sistemas', id: 'progresion', t: 'Rankup, playtime y misiones', ic: 'experience_bottle', d: 'Lo que se gana subiendo de rango, jugando horas y haciendo misiones.', w: 'w4' },
   { g: 'Sistemas', id: 'rangos', t: 'Rangos VIP', ic: 'golden_helmet', d: 'Lo que da cada rango, lado a lado.', w: 'w4' },
   { g: 'Sistemas', id: 'combate', t: 'Dificultad y hordas', ic: 'iron_sword', d: 'Cuánto pega cada cosa con cada armadura.', w: 'w4' },
-  { g: 'Sistemas', id: 'calamity', t: 'Calamity', ic: 'wither_rose', d: 'El mundo hardcore: cordura, Parca, Eclipse, Armisticio, Forja, contratos y Temporada.', w: 'w6' },
+  { g: 'Sistemas', id: 'calamity', t: 'Calamity', ic: 'goat_horn', hot: 'Hardcore', d: 'El mundo hardcore: cordura, Parca, Eclipse, Armisticio, Forja, contratos y Temporada.', w: 'w6' },
   { g: 'Sistemas', id: 'pesca', t: 'Pesca', ic: 'fishing_rod', n: () => D.pesca.peces.length, d: 'Cajas, premios, cañas, carnadas, rangos y torneos de pesca.', w: 'w4' },
   { g: 'Sistemas', id: 'mundo', t: 'Mundo y servicios', ic: 'diamond_pickaxe', d: 'Minions, protecciones, minas y otros servicios.', w: 'w6' },
 ];
@@ -158,7 +158,7 @@ const pad = n => String(n).padStart(2, '0');
 const nav = $('#nav'), main = $('#main');
 {
   let lastG = '';
-  nav.innerHTML = VIEWS.map(v => { const h = v.g !== lastG ? `<div class="rail__grp">${v.g}</div>` : ''; lastG = v.g; return h + `<a href="#${v.id}" data-v="${v.id}" data-num="${pad(VI[v.id].i)}">${ico(v.ic)}<span>${v.t}</span>${v.n ? `<span class="n">${v.n()}</span>` : ''}</a>`; }).join('') +
+  nav.innerHTML = VIEWS.map(v => { const h = v.g !== lastG ? `<div class="rail__grp">${v.g}</div>` : ''; lastG = v.g; return h + `<a href="#${v.id}" data-v="${v.id}" data-num="${pad(VI[v.id].i)}"${v.hot ? ' class="hot"' : ''}>${ico(v.ic)}<span>${v.t}</span>${v.hot ? `<span class="hot__tag">${v.hot}</span>` : ''}${v.n ? `<span class="n">${v.n()}</span>` : ''}</a>`; }).join('') +
     `<div class="rail__foot"><b>Atajos</b><kbd>${MAC ? '⌘' : 'Ctrl'}</kbd> <kbd>K</kbd> o <kbd>/</kbd> para buscar · <kbd>Esc</kbd> para cerrar fichas.</div>`;
   hydrate(nav);
 }
@@ -597,8 +597,38 @@ const B = {
     table($('#tb', el), [{ k: 'nombre', l: 'Encantamiento', render: (r, re) => `<b>${hl(r.nombre, re)}</b>` }, { k: 'tier', l: 'Tier', sv: r => ord[r.tier] || 0, render: r => `<span class="pill tier-${tc[r.tier]}">${esc(r.tier)}</span>` }, { k: 'para', l: 'Para' }, { k: 'niveles', l: 'Niveles', t: 'num' }, { k: 'efecto', l: 'Efecto al nivel máximo' }], D.encantamientos, { filters: ['tier', 'para'], sort: 'tier', dir: -1, name: 'encantamientos', onRow: encDetail });
   },
   mazmorras(el) {
+    // Dosa 02/11: las mazmorras en sí (requisitos, jefe, tropa con su botín, cofres, encargos y tiendas), no solo la lista de mobs
+    const M = D.mazmorras || [], T = D.mazmorras_tiendas || {};
     const top = [...D.jefes].sort((a, b) => b.vida - a.vida);
-    el.innerHTML = head('mazmorras', 'Jefes y tropa de mazmorra', 'Mobs de MythicMobs (Mazmorra del Dragón, Artoria y Culto). Dungeons está en dificultad Difícil.', [['Mobs', D.jefes.length], ['Más vida', `${esc(top[0].mob)} · ${fmt(top[0].vida)}`]]) + '<div id="tb" class="rv"></div>' + fichas('mazmorras');
+    el.innerHTML = head('mazmorras', 'Mazmorras', 'Las mazmorras del Survival: qué hace falta para entrar, a quién te enfrentas, qué sueltan sus mobs y sus cofres, los encargos de sus NPC y sus tiendas. Dungeons está en dificultad Difícil.', [['Mazmorras', M.length], ['Mobs', D.jefes.length], ['Más vida', `${esc(top[0].mob)} · ${fmt(top[0].vida)}`]]) +
+      sect('Las mazmorras', `<div class="mz-grid">${M.map(m => `<article class="mz glass" data-mz="${m.id}">
+        <div class="mz__h">${ico(m.ic, null, 1)}<div><h3>${esc(m.n)}</h3>${m.rank ? `<span class="mz__rank">Rango ${m.rank} o más</span>` : ''}</div></div>
+        <p>${esc(m.req)}</p>
+        ${m.tropa.length ? `<div class="mz__tropa">${m.tropa.slice(0, 6).map(t => `<span><b>${esc(t.n)}</b><small>♥ ${fmt(t.vida)} · ⚔ ${fmt(t.dano)}</small></span>`).join('')}${m.tropa.length > 6 ? `<span class="mut sm">y ${m.tropa.length - 6} más</span>` : ''}</div>` : ''}
+        <div class="mz__btns">${m.cofres.map(c => `<button type="button" class="mz__cofre" data-cofre="${esc(c.r)}" style="--rc:${RAR_C[c.r] || 'var(--mc-7)'}">Cofre ${esc(c.r.toLowerCase())} <small>${c.lista.length}</small></button>`).join('')}${m.encargos.length ? `<button type="button" class="mz__enc">Encargos de ${esc(m.npc)} <small>${m.encargos.length}</small></button>` : ''}</div>
+        ${m.tropa.length ? '<button type="button" class="ct__more mz__more">Ver jefe, tropa y botín <span aria-hidden="true">→</span></button>' : ''}
+      </article>`).join('')}</div>`, '01', 'Toca una mazmorra para ver su jefe, su tropa y lo que suelta cada mob.') +
+      sect('Jefes y tropa', '<div id="tb" class="rv"></div>', '02') +
+      sect('Darian, el intendente: forja de Artoria', '<div id="td" class="rv"></div>', '03', 'Equipo de los caballeros a cambio del botín de los mobs de Artoria.') +
+      sect('Nerea: consumibles y el set de Veyra', '<div id="tn" class="rv"></div>', '04', 'El set de Veyra se desbloquea tras «La mano del culto» y solo se compra una vez.') +
+      sect('El alquimista', '<div id="ta" class="rv"></div>', '05', 'Efectos temporales y libros a cambio de dinero y materiales de mazmorra.') + fichas('mazmorras');
+    const EF = { SPEED: 'Velocidad', JUMP_BOOST: 'Salto', NIGHT_VISION: 'Visión nocturna', HASTE: 'Prisa', STRENGTH: 'Fuerza', RESISTANCE: 'Resistencia', REGENERATION: 'Regeneración', FIRE_RESISTANCE: 'Resistencia al fuego', WATER_BREATHING: 'Respiración acuática', ABSORPTION: 'Absorción', HEALTH_BOOST: 'Vida extra', LUCK: 'Suerte' };
+    const efes = t => (t || '').split(',').map(x => x.trim()).filter(Boolean).map(x => { const [k, n] = x.split(':'); return (EF[k] || k) + ' ' + ROM(+n + 1); }).join(', ');
+    const zona = id => M.find(m => m.id === id);
+    const encDr = m => openDrawer({ kind: 'Mazmorra · ' + m.n, title: 'Encargos de ' + m.npc, art: ico('writable_book', null, 1), wide: true,
+      extra: `<div class="mz-enc">${m.encargos.map(q => `<div class="mz-enc__q"><span class="pill">Cap. ${q.cap}</span><b>${esc(q.n)}</b><span class="mut sm">${q.cant > 1 ? '× ' + fmt(q.cant) + ' · ' : ''}${esc(q.rec)}</span></div>`).join('')}</div>` });
+    const mzDr = m => openDrawer({ kind: 'Mazmorra', title: m.n, art: ico(m.ic, null, 1), wide: true, sub: m.rank ? `<span class="mz__rank">Rango ${m.rank} o más</span>` : '',
+      extra: `<p style="margin:0">${esc(m.req)}</p>${m.tropa.map(t => `<div class="mz-mob"><div class="mz-mob__h"><b>${esc(t.n)}</b><span class="mut sm">♥ ${fmt(t.vida)} · ⚔ ${fmt(t.dano)} · 🛡 ${fmt(t.armadura)}</span></div>${t.drops.length ? `<div class="mz-mob__d">${t.drops.map(d => `<span class="mz-drop">${ico(d.ic)}<span><b>${esc(d.n)}</b><small>${d.q && d.q !== '1' ? '× ' + esc(d.q) + ' · ' : ''}${fmt(d.p)} %</small></span></span>`).join('')}</div>` : '<p class="mut sm" style="margin:0">No suelta botín propio.</p>'}</div>`).join('')}` });
+    $$('.mz', el).forEach(a => {
+      const m = zona(a.dataset.mz);
+      $$('.mz__cofre', a).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); const c = m.cofres.find(x => x.r === b.dataset.cofre);
+        openPremios({ kind: 'Mazmorra · ' + m.n, title: 'Cofre ' + c.r.toLowerCase(), ic: 'chest', color: RAR_C[c.r], lista: c.lista.map(f => ({ ...f, r: undefined })), sub: 'Cada objeto sale con su propia probabilidad: un cofre puede traer varios.' }); }));
+      const be = $('.mz__enc', a); if (be) be.addEventListener('click', e => { e.stopPropagation(); encDr(m); });
+      if (m.tropa.length) { a.style.cursor = 'pointer'; a.addEventListener('click', () => mzDr(m)); }
+    });
+    table($('#td', el), [{ k: 'n', l: 'Lo que forja', render: (r, re) => `<b>${hl(r.n, re)}</b>` }, { k: 'cat', l: 'Tipo' }, { k: 'coste', l: 'Coste' }], T.darian || [], { filters: ['cat'], name: 'darian' });
+    table($('#tn', el), [{ k: 'n', l: 'Lo que vende', render: (r, re) => `<b>${hl(r.n, re)}</b>${r.q > 1 ? ` × ${r.q}` : ''}` }, { k: 'coste', l: 'Coste' }, { k: 'req', l: 'Requisito' }, { k: 'limite', l: 'Límite', t: 'num' }], T.nerea || [], { name: 'nerea' });
+    table($('#ta', el), [{ k: 'n', l: 'Oferta', render: (r, re) => `<b>${hl(r.n, re)}</b>` }, { k: 'efectos', l: 'Efectos', render: r => esc(efes(r.efectos)) }, { k: 'dur', l: 'Dura (min)', t: 'num' }, { k: 'dinero', l: 'Dinero' }, { k: 'materiales', l: 'Materiales' }], T.alquimista || [], { name: 'alquimista' });
     table($('#tb', el), [{ k: 'mob', l: 'Mob', render: (r, re) => `<span class="row">${mobFace(r)}<b>${hl(r.mob, re)}</b></span>` }, { k: 'vida', l: 'Vida', t: 'bar' }, { k: 'dano', l: 'Daño', t: 'num' }, { k: 'armadura', l: 'Armadura', t: 'num' }, { k: 'habilidades', l: 'Habilidades', t: 'num' }, { k: 'fichero', l: 'Grupo' }], D.jefes, { filters: ['fichero'], sort: 'vida', name: 'mazmorras' });
   },
   mascotas(el) {
