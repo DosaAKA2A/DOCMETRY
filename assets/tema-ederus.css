@@ -75,7 +75,7 @@ body{font-family:var(--f-body);color:var(--ink)}
 
 /* controles: como los de la tienda */
 .btn,.icon-btn,.dr__x,.totop,.search-trigger,.field{border-radius:12px}
-.btn--p,.seg button.on,.tchip.on,.tg.on::before{background:var(--sig)!important;color:#fff!important;border-color:transparent!important}
+.btn--p,.seg button.on,.tg.on::before{background:var(--sig)!important;color:#fff!important;border-color:transparent!important}
 .btn--p{box-shadow:0 0 40px -8px rgba(97,60,244,.55)}
 .seg{border-radius:12px;background:rgba(11,10,22,.72);border:1px solid var(--line)}
 .field,.search-trigger{background:rgba(11,10,22,.72);border:1px solid var(--line)}
@@ -170,3 +170,5 @@ h1,h2,h3,h4{font-family:var(--f-head);font-stretch:100%!important;letter-spacing
 .vh[data-v="combate"],.vh[data-v="calamity"]{--tinte:226,72,63}
 .vh[data-v="pesca"]{--tinte:69,142,231}
 @media (max-width:700px){.vh::after{width:180px;height:180px;opacity:.12}}
+/* los chips de tier conservan el color de su tier (no el degradado de la marca) */
+.tchip.on{background:var(--tc)!important;color:#0b0a16!important;border-color:var(--tc)!important}
