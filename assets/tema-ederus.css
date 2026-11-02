@@ -79,9 +79,8 @@ body{font-family:var(--f-body);color:var(--ink)}
 .btn--p{box-shadow:0 0 40px -8px rgba(97,60,244,.55)}
 .seg{border-radius:12px;background:rgba(11,10,22,.72);border:1px solid var(--line)}
 .field,.search-trigger{background:rgba(11,10,22,.72);border:1px solid var(--line)}
-.tg,.tg.plain,.chip,.pill,.shop__tag,.mz__cofre,.mz__enc,.pzc__r,.mz__rank,.tz-chip{border-radius:99px}
+.tg,.tg.plain,.pill,.shop__tag,.mz__cofre,.mz__enc,.pzc__r,.mz__rank,.tz-chip{border-radius:99px}
 .tchip{border-radius:9px}
-.chip{background:rgba(255,255,255,.05);border:1px solid var(--line-soft)}
 
 /* cinta de la portada con el degradado de la marca */
 .marquee{background:var(--sig);border-bottom:0}
@@ -124,11 +123,11 @@ h1,h2,h3,h4{font-family:var(--f-head);font-stretch:100%!important;letter-spacing
 .mctip{font-family:var(--f-body);font-size:12.5px}
 .mctip .t{font-family:var(--f-head);font-weight:700;font-size:14px;letter-spacing:-.01em}
 
-/* los acentos de color propios de cada tarjeta se mantienen (franja del NPC, rojo de Calamity, oro de mazmorras, tono de cada tier) */
-.npc{box-shadow:inset 4px 0 0 var(--tono),var(--inset-top),var(--sh-2)!important}
-.calx-ess__i,.ct{box-shadow:inset 0 3px 0 var(--cal-sangre),var(--inset-top),var(--sh-2)!important}
-.mz{box-shadow:inset 0 3px 0 var(--mc-6),var(--inset-top),var(--sh-2)!important}
-.vh{box-shadow:inset 4px 0 0 var(--az),var(--inset-top),var(--sh-2)!important}
+/* los acentos de color de cada tarjeta van en su borde en degradado, como el color de cada modalidad en la tienda (.tz-mode) */
+.npc{background:var(--panel-fondo) padding-box,linear-gradient(150deg,var(--tono),rgba(97,60,244,.22)) border-box!important}
+.calx-ess__i,.ct{background:var(--panel-fondo) padding-box,linear-gradient(150deg,color-mix(in srgb,var(--cal-sangre) 70%,transparent),rgba(97,60,244,.22)) border-box!important}
+.mz{background:var(--panel-fondo) padding-box,linear-gradient(150deg,color-mix(in srgb,var(--mc-6) 65%,transparent),rgba(97,60,244,.22)) border-box!important}
+.ct,.npc,.mz,.calx-ess__i{border-top-width:1px!important;border-left-width:1px!important}
 .ct:hover,.npc:hover,.mz:hover,.calx-ess__i:hover{box-shadow:0 0 0 1px var(--violet),var(--sh-3)!important}
 
 /* barra superior: el buscador va como la pastilla de la tienda, separado de los bordes (antes tocaba el borde de la barra y del logo) */
@@ -136,3 +135,9 @@ h1,h2,h3,h4{font-family:var(--f-head);font-stretch:100%!important;letter-spacing
 .top .search-trigger:hover{border-color:var(--violet);background:rgba(97,60,244,.10)}
 .brand,.top__link{border-color:var(--line-soft)}
 .field{border-radius:12px}
+
+/* cabecera de cada sección: sin franja lateral (la tienda no la usa) y las cifras como un solo bloque con separadores */
+.vh::after{display:none}
+.stats{border-radius:12px!important;border:1px solid var(--line-soft)!important;background:rgba(11,10,22,.55)!important;overflow:hidden}
+.stats .chip{border-radius:0!important;background:none!important;border:0!important;border-right:1px solid var(--line-soft)!important;font-family:var(--f-head);font-weight:700;letter-spacing:.12em}
+.stats .chip:last-child{border-right:0!important}
