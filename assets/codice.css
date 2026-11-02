@@ -778,3 +778,8 @@ main{view-transition-name:main-view}
 /* rótulo de tier con nombre largo (encantamientos: Ancestral, Legendario…) */
 .tl-row .tl-t.largo b,.tl-row[data-t=EX] .tl-t.largo b{font-size:12px;letter-spacing:.02em}
 .tchip.largo{width:auto;padding:0 10px}
+
+/* ---------- sin animaciones de entrada (Dosa 02/11: «se siente muuuy lag»): todo aparece al instante ---------- */
+.rv,.tt,.split-word>span,.mast__word h1 span{opacity:1!important;transform:none!important;transition:none!important}
+.bcell i,.sb__t i,.pc,.cmp__cols .vl i{animation:none!important}
+.stack span,.hb .tr i,.scrim,.dr,.dr.on{transition:none!important}
