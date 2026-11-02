@@ -175,3 +175,6 @@ h1,h2,h3,h4{font-family:var(--f-head);font-stretch:100%!important;letter-spacing
 @media (max-width:760px){.vh__art{width:60%;opacity:.7}.vh__art .a3,.vh__art .a1{display:none}}
 /* los chips de tier conservan el color de su tier (no el degradado de la marca) */
 .tchip.on{background:var(--tc)!important;color:#0b0a16!important;border-color:var(--tc)!important}
+
+/* el selector de pesca conserva su azul / rojo (no el degradado de la marca) */
+.pz-z b{font-family:var(--f-head);font-weight:700;letter-spacing:-.01em}
