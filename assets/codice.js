@@ -345,29 +345,35 @@ function calTema(id) {
 }
 // ---------- panel de premios de una caja (pesca o crate): cada premio con su icono, probabilidad, lore y enlace
 const RAR_T = { Común: 'D', 'Poco común': 'C', Raro: 'B', Épico: 'A', Legendario: 'S', Mítico: 'EX', Ancestral: 'EX', Inmortal: 'EX', Único: 'A' };
-function premioHtml(f, extra) {
-  const slot = `<span class="slot pz__slot${f.g || f.ic === 'enchanted_golden_apple' ? ' ench' : ''}">${f.img ? `<span class="ic lg"><img alt="" src="${f.img}"></span>` : ico(f.ic, null, 1)}${f.q ? `<b class="pz__q">${esc(f.q)}</b>` : ''}</span>`;
-  const meta = [f.t, f.r].filter(Boolean).map(esc).join(' · ');
-  return `<article class="pz">${slot}<div class="pz__b">
-    <div class="pz__h"><b style="${f.c ? `color:${f.c}` : ''}">${esc(f.n)}</b><span class="pz__p">${fmt(f.p)} %${extra ? `<small>${extra(f)}</small>` : ''}</span></div>
-    ${meta ? `<div class="pz__m">${meta}</div>` : ''}
-    ${f.e ? `<div class="pz__e">${f.e.map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}
-    ${f.st ? `<div class="pz__st">${f.st.map(([k, v]) => `<span>${esc(k)} <b>${esc(v)}</b></span>`).join('')}</div>` : ''}
-    ${f.l ? `<div class="pz__l">${f.l.filter(x => x.trim()).map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}
-    ${f.fl ? `<p class="pz__fl">«${esc(f.fl)}»</p>` : ''}
-    ${f.in ? `<div class="pz__in">${f.in.map(([i, q, n]) => `<span title="${esc(n || i)}">${ico(i)}${q && q !== '1' ? `<b>${esc(q)}</b>` : ''}</span>`).join('')}</div>` : ''}
-    ${f.go ? `<a class="pz__go" href="#${esc(f.go)}">Ver su ficha <span aria-hidden="true">→</span></a>` : ''}
-  </div></article>`;
+// Dosa 02/11: cuadrícula de casillas (sin halo) y el lore en el recuadro al pasar el ratón
+let PZX = null;
+function premioCelda(f, i) {
+  return `<button type="button" class="pzc" data-tip="p:${i}"${f.go ? ` data-go="${esc(f.go)}"` : ''}><span class="slot pzc__slot">${f.img ? `<span class="ic lg"><img alt="" src="${f.img}"></span>` : ico(f.ic, null, 1)}${f.q ? `<b class="pz__q">${esc(f.q)}</b>` : ''}</span>
+    <b class="pzc__n" style="${f.c ? `color:${f.c}` : ''}">${esc(f.n)}</b><span class="pzc__p">${fmt(f.p)} %</span></button>`;
+}
+function premioTip(f) {
+  const lin = (cls, xs) => xs && xs.length ? xs.filter(x => String(x).trim()).map(x => `<span class="${cls}">${esc(x)}</span>`).join('') : '';
+  return `<span class="t" style="color:${f.c || 'var(--blanco)'}">${esc(f.n)}${f.q ? ` ×${esc(f.q)}` : ''}</span>${[f.t, f.r].filter(Boolean).length ? `<span class="sub">${[f.t, f.r].filter(Boolean).map(esc).join(' · ')}</span>` : ''}
+    ${lin('pt-e', f.e)}${f.st ? f.st.map(([k, v]) => r(k, v)).join('') : ''}${lin('pt-l', f.l)}${f.fl ? `<span class="pt-fl">«${esc(f.fl)}»</span>` : ''}
+    ${f.in ? `<span class="pt-h">Trae</span>${f.in.map(([ic, q, n]) => `<span class="pt-in">${q && q !== '1' ? q + '× ' : ''}${esc(n || String(ic).replace(/_/g, ' '))}</span>`).join('')}` : ''}
+    ${r('Probabilidad', fmt(f.p) + ' %')}${PZX && PZX.extra ? r('Por captura', PZX.extra(f)) : ''}${f.go ? '<span class="l">Clic para ver su ficha</span>' : ''}`;
 }
 function openPremios(o) {
-  const L = o.lista || [];
+  const L = o.lista || []; PZX = o; BYID.p = new Map(L.map((f, i) => [String(i), f]));
   openDrawer({ kind: o.kind, title: o.title, art: ico(o.ic, null, 1), color: o.color, wide: true, link: o.link, sub: o.sub,
     extra: `<div class="pz-wrap"><label class="field pz-f">${SVG.search}<input type="search" placeholder="Buscar entre ${L.length} premios…" aria-label="Buscar premio"></label>
-      <div class="pz-list">${L.map(f => premioHtml(f, o.extra)).join('')}</div></div>` });
+      <p class="mut sm pz-ayuda">Pasa el ratón por un premio para ver su lore. Están ordenados del más probable al más raro.</p>
+      <div class="pz-grid">${L.map(premioCelda).join('')}</div></div>` });
   hydrate(dr);
-  const q = $('.pz-f input', dr), items = $$('.pz', dr);
-  q.addEventListener('input', () => { const v = q.value.trim().toLowerCase(); items.forEach((a, i) => { a.hidden = v && !JSON.stringify(L[i]).toLowerCase().includes(v); }); });
-  $$('.pz__go', dr).forEach(a => a.addEventListener('click', e => { e.preventDefault(); closeDrawer(); setTimeout(() => { location.hash = a.getAttribute('href').slice(1); }, 60); }));
+  const q = $('.pz-f input', dr), cells = $$('.pzc', dr);
+  q.addEventListener('input', () => { const v = q.value.trim().toLowerCase(); cells.forEach((a, i) => { a.hidden = v && !JSON.stringify(L[i]).toLowerCase().includes(v); }); });
+  cells.forEach((a, i) => a.addEventListener('click', () => {
+    if (a.dataset.go) { closeDrawer(); setTimeout(() => { location.hash = a.dataset.go; }, 60); return; }
+    if (matchMedia('(hover: none)').matches) {  // en el móvil, tocar enseña el recuadro
+      const b = a.getBoundingClientRect(); mctip.innerHTML = premioTip(L[i]); mctip.classList.add('on'); tipEl = a;
+      placeTip({ clientX: Math.min(b.left, innerWidth - mctip.offsetWidth - 26), clientY: b.bottom + 14 });
+    }
+  }));
 }
 // ---------- ficha (drawer)
 const dr = $('#dr'), scrim = $('#scrim'); let drBack = null, drView = null;
@@ -663,7 +669,7 @@ const B = {
       sect('Los cambios de Carpa', `<div class="cards">${P.carpa.map((c, i) => `<div class="cc glass spot rv" style="--d:${i * 50}ms"><h3>${esc(c.da)}</h3><div class="kv"><span>Pide</span><span>${esc(c.pide)}</span></div></div>`).join('')}</div>`, '10', 'Carpa, en el spawn de Calamity, mejora la Marea Celeste a Sangrienta.');
     $$('.pzcard', el).forEach(b => b.addEventListener('click', () => { const t = P.tiers.find(x => x.id === b.dataset.tier);
       openPremios({ kind: 'Pesca · caja ' + t.n.toLowerCase(), title: 'Caja ' + t.n, ic: 'fishing_rod', color: TC[TCOL[t.n] || 'D'], lista: t.lista, link: 'pesca/' + t.id,
-        sub: `<span class="pill tier-${TCOL[t.n] || 'D'}">${pc(t.pct)}</span> de las capturas sin boosts`, extra: f => `${fmt(Math.round(f.p * t.pct) / 100)} % por captura` }); }));
+        sub: `<span class="pill tier-${TCOL[t.n] || 'D'}">${pc(t.pct)}</span> de las capturas sin boosts`, extra: f => `${fmt(Math.round(f.p * t.pct) / 100)} %` }); }));
     table($('#tbp', el), [{ k: 'n', l: 'Premio' }, { k: 'caja', l: 'Caja' }, { k: 'tipo', l: 'Tipo' }, { k: 'pct', l: 'En su caja (%)', t: 'num' }, { k: 'real', l: 'Por captura (%)', t: 'num' }], P.tiers.flatMap(t => t.premios.map(p => ({ ...p, caja: t.n, real: Math.round(p.pct * t.pct) / 100 }))), { filters: ['caja', 'tipo'], sort: 'real', name: 'pesca-premios' });
     table($('#tbr', el), [{ k: 'rango', l: 'Rango' }, { k: 'cajas', l: 'Más cajas (%)', t: 'num' }, { k: 'suerte', l: 'Suerte (%)', t: 'num' }, { k: 'mordida', l: 'Pican antes (%)', t: 'num' }, { k: 'doble', l: 'Premio doble (%)', t: 'num' }, { k: 'talla', l: 'Peces más grandes (%)', t: 'num' }, { k: 'venta', l: 'Venta (%)', t: 'num' }, { k: 'percances', l: 'Menos percances (%)', t: 'num' }], P.rangos, { name: 'pesca-rangos' });
     table($('#tbf', el), [{ k: 'n', l: 'Pez' }, { k: 'rareza', l: 'Rareza' }, { k: 'zona', l: 'Dónde' }, { k: 'min', l: 'Talla mín. (cm)', t: 'num' }, { k: 'max', l: 'Talla máx. (cm)', t: 'num' }, { k: 'base', l: 'Precio base', t: 'num' }, { k: 'kg', l: 'Por kg', t: 'num' }], P.peces, { filters: ['rareza', 'zona'], sort: 'kg', name: 'pesca-peces' });
@@ -717,6 +723,7 @@ const TIPF = {
   n: a => `<span class="t" style="color:${TC[a.tier]}">${esc(a.nombre)}</span><span class="sub">${esc(a.clase)} · ${esc(a.bioma || '')}</span>${r('Vida', fmt(a.vida))}${r('Daño medio', fmt(Math.round(a.dano_real)))}${r('Habilidades', fmt(a.habilidades))}${r('MobCoins', fmt(a.mobcoins))}<span class="l">Tier ${a.tier} · clic para ver la ficha</span>`
 };
 let tipEl = null;
+TIPF.p = f => premioTip(f);
 const placeTip = e => { const w = mctip.offsetWidth, h = mctip.offsetHeight; let x = e.clientX + 18, y = e.clientY - 12; if (x + w > innerWidth - 8) x = e.clientX - w - 18; if (y + h > innerHeight - 8) y = innerHeight - h - 8; mctip.style.transform = `translate(${x}px,${Math.max(8, y)}px)`; };
 document.addEventListener('pointerover', e => {
   if (e.pointerType !== 'mouse') return; const t = e.target.closest && e.target.closest('[data-tip]');
