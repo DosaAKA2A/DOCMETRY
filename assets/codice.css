@@ -18,6 +18,8 @@
   --ex:var(--tc-ex);--ex-claro:#e2c6ff;--ex-medio:#c58cff;--ex-oscuro:#9a5cf0;--ex-sombra:#4a1f7a;--ex-destello:#f6ecff;--ex-luz:#b77bff;--ex-suave:#d7b0ff;
   /* guía de Calamity: sangre y brasa */
   --cal-sangre:#e2483f;--cal-brasa:#ffb86b;--cal-fondo:#170d0f;
+  /* rarezas de las crates (ExcellentCrates, objects/rarity) */
+  --rar-unico:#FFAA00;--rar-inmortal:#FF5C7A;--rar-ancestral:#FF7A45;--rar-mitico:#C79BFF;--rar-legendario:#FFB347;--rar-epico:#FF77FF;--rar-raro:#7CFF7C;--rar-comun:#E0E0E0;
   /* madera (cartel) */
   --madera:#3a2a18;--madera-luz:#8a6538;--madera-sombra:#3e2c16;
   /* color de cada tier en textos, fichas y filas de la tier list */
@@ -761,3 +763,10 @@ main{view-transition-name:main-view}
 .mctip .pt-h{display:block;margin-top:6px;color:var(--mc-6)}
 .mctip .pt-in{display:block;color:var(--ink-2);font-family:var(--f-body);font-size:12.5px}
 .mctip:has(.pt-l,.pt-in,.pt-lore){max-width:420px}
+
+/* rareza de cada premio, con el color de la crate */
+.pzc__r{font:400 9px var(--f-px);text-transform:uppercase;padding:2px 6px;color:var(--negro);background:var(--rc)}
+.pz-zona{margin:0 0 4px}
+.pz-zona-txt{margin:0 0 6px}
+/* tags tal como se ven en el juego */
+.tagmc{font:400 13px var(--f-px);white-space:nowrap;padding:3px 7px;background:color-mix(in srgb,var(--negro) 55%,transparent)}

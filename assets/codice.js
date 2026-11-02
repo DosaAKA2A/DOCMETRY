@@ -344,18 +344,19 @@ function calTema(id) {
   });
 }
 // ---------- panel de premios de una caja (pesca o crate): cada premio con su icono, probabilidad, lore y enlace
+const RAR_C = { Único: 'var(--rar-unico)', Inmortal: 'var(--rar-inmortal)', Ancestral: 'var(--rar-ancestral)', Mítico: 'var(--rar-mitico)', Legendario: 'var(--rar-legendario)', Épico: 'var(--rar-epico)', Raro: 'var(--rar-raro)', Común: 'var(--rar-comun)' };
 const RAR_T = { Común: 'D', 'Poco común': 'C', Raro: 'B', Épico: 'A', Legendario: 'S', Mítico: 'EX', Ancestral: 'EX', Inmortal: 'EX', Único: 'A' };
 // Dosa 02/11: cuadrícula de casillas (sin halo) y el lore en el recuadro al pasar el ratón
 let PZX = null;
 function premioCelda(f, i) {
   return `<button type="button" class="pzc${f.r === 'Único' ? ' unico' : ''}" data-tip="p:${i}"${f.go ? ` data-go="${esc(f.go)}"` : ''}><span class="slot pzc__slot">${f.img ? `<span class="ic lg"><img alt="" src="${f.img}"></span>` : ico(f.ic, null, 1)}${f.q ? `<b class="pz__q">${esc(f.q)}</b>` : ''}</span>
-    <b class="pzc__n" style="${f.c ? `color:${f.c}` : ''}">${f.nh ? rt(f.nh) : esc(f.n)}</b><span class="pzc__p">${fmt(f.p)} %</span></button>`;
+    <b class="pzc__n" style="${f.c ? `color:${f.c}` : ''}">${f.nh ? rt(f.nh) : esc(f.n)}</b>${f.r ? `<span class="pzc__r" style="--rc:${RAR_C[f.r] || 'var(--mc-7)'}">${esc(f.r)}</span>` : ''}<span class="pzc__p">${fmt(f.p)} %</span></button>`;
 }
 // texto original de Minecraft: tramos [texto, color, banderas] (1 negrita, 2 cursiva, 4 subrayado, 8 tachado)
 const rt = runs => (runs || []).map(([t, c, fl]) => { const st = (c ? `color:#${c};` : '') + (fl & 1 ? 'font-weight:700;' : '') + (fl & 2 ? 'font-style:italic;' : '') + (fl & 12 ? `text-decoration:${fl & 4 ? 'underline ' : ''}${fl & 8 ? 'line-through' : ''};` : ''); return st ? `<span style="${st}">${esc(t)}</span>` : esc(t); }).join('');
 function premioTip(f) {
   const lin = (cls, xs) => xs && xs.length ? xs.filter(x => String(x).trim()).map(x => `<span class="${cls}">${esc(x)}</span>`).join('') : '';
-  return `<span class="t" style="color:${f.c || 'var(--blanco)'}">${f.nh ? rt(f.nh) : esc(f.n)}${f.q ? ` ×${esc(f.q)}` : ''}</span>${[f.t, f.r].filter(Boolean).length ? `<span class="sub">${[f.t, f.r].filter(Boolean).map(esc).join(' · ')}</span>` : ''}
+  return `<span class="t" style="color:${f.c || 'var(--blanco)'}">${f.nh ? rt(f.nh) : esc(f.n)}${f.q ? ` ×${esc(f.q)}` : ''}</span><span class="sub">${esc(f.t || '')}${f.r ? `${f.t ? ' · ' : ''}<b style="color:${RAR_C[f.r] || 'inherit'};font-weight:700">${esc(f.r)}</b>` : ''}</span>
     ${f.lh ? `<span class="pt-lore">${f.lh.map(l => `<span class="pt-lh">${l.length ? rt(l) : '&nbsp;'}</span>`).join('')}</span>` : lin('pt-l', f.l)}${lin('pt-e', f.e)}${f.st ? f.st.map(([k, v]) => r(k, v)).join('') : ''}${f.fl ? `<span class="pt-fl">«${esc(f.fl)}»</span>` : ''}
     ${f.in ? `<span class="pt-h">Trae</span>${f.in.map(([ic, q, n]) => `<span class="pt-in">${q && q !== '1' ? q + '× ' : ''}${esc(n || String(ic).replace(/_/g, ' '))}</span>`).join('')}` : ''}
     ${r('Probabilidad', fmt(f.p) + ' %')}${PZX && PZX.extra ? r('Por captura', PZX.extra(f)) : ''}${f.go ? '<span class="l">Clic para ver su ficha</span>' : ''}`;
@@ -456,7 +457,7 @@ function encDetail(e) {
 }
 const PZOPEN = {
   cajas: id => { const b = $(`.pzcard[data-caja="${CSS.escape(id)}"]`); if (b) b.click(); },
-  pesca: id => { const b = $(`.pzcard[data-tier="${CSS.escape(id)}"]`); if (b) b.click(); },
+  pesca: id => { const v = built.pesca; if (v && v.pescaZona) v.pescaZona(id.startsWith('calamity-') ? 'calamity' : 'normal'); const b = $(`.pzcard[data-tier="${CSS.escape(id.replace(/^calamity-/, ''))}"]`); if (b) b.click(); },
 };
 const FIND = { encantamientos: [() => D.encantamientos, encDetail], 'tl-armaduras': [() => D.armaduras, setDetail], 'tl-armas': [() => D.armas, armaDetail], 'tl-anomalias': [() => D.anomalias, anDetail] };
 
@@ -577,7 +578,7 @@ const B = {
     $$('.pzcard', el).forEach(b => b.addEventListener('click', () => { const c = D.cajas.find(x => x.caja === b.dataset.caja);
       openPremios({ kind: 'Crate · llave ' + c.llave, title: 'Crate ' + c.caja, ic: 'tripwire_hook', color: 'var(--gold)', lista: c.lista, link: 'cajas/' + c.caja,
         sub: `${c.premios} premios · el más raro, ${fmt(c.rara)} %` }); }));
-    table($('#tb', el), [{ k: 'caja', l: 'Caja' }, { k: 'premio', l: 'Premio', render: (r, re) => `<b>${hl(r.premio, re)}</b>` }, { k: 'tipo', l: 'Tipo' }, { k: 'rareza', l: 'Rareza' }, { k: 'pct', l: 'Probabilidad', t: 'bar', u: ' %' }, { k: 'limite', l: 'Límite' }], D.premios, { filters: ['caja', 'tipo', 'rareza'], sort: 'pct', name: 'premios' });
+    table($('#tb', el), [{ k: 'caja', l: 'Caja' }, { k: 'premio', l: 'Premio', render: (r, re) => `<b>${hl(r.premio, re)}</b>` }, { k: 'tipo', l: 'Tipo' }, { k: 'rareza', l: 'Rareza', render: r => `<b style="color:${RAR_C[r.rareza] || 'inherit'}">${esc(r.rareza)}</b>` }, { k: 'pct', l: 'Probabilidad', t: 'bar', u: ' %' }, { k: 'limite', l: 'Límite' }], D.premios, { filters: ['caja', 'tipo', 'rareza'], sort: 'pct', name: 'premios' });
   },
   encantamientos(el) {
     const tc = { Simple: 'D', Único: 'C', Elite: 'B', Supremo: 'A', Legendario: 'S', Ancestral: 'EX' }, ord = { Simple: 1, Único: 2, Elite: 3, Supremo: 4, Legendario: 5, Ancestral: 6 };
@@ -596,7 +597,7 @@ const B = {
   tags(el) {
     const cats = [...new Set(D.tags.map(t => t.categoria))];
     el.innerHTML = head('tags', 'Tags', `Los ${D.tags.length} tags del plugin Tags y cómo se consiguen.`, [['Tags', D.tags.length], ['Categorías', cats.length]]) + '<div id="tb" class="rv"></div>';
-    table($('#tb', el), [{ k: 'tag', l: 'Tag', render: (r, re) => `<b>${hl(r.tag, re)}</b>` }, { k: 'categoria', l: 'Categoría' }, { k: 'fuente', l: 'Cómo se consigue' }], D.tags, { filters: ['categoria'], name: 'tags' });
+    table($('#tb', el), [{ k: 'd', l: 'Así se ve', render: r => `<span class="tagmc">${rt(r.d) || esc(r.tag)}</span>` }, { k: 'tag', l: 'Nombre', render: (r, re) => `<b>${hl(r.tag, re)}</b>` }, { k: 'categoria', l: 'Categoría' }, { k: 'fuente', l: 'Cómo se consigue' }], D.tags, { filters: ['categoria'], name: 'tags' });
   },
   economia(el) {
     const src = [['Rankup (20 rangos)', 9400000], ['Misiones de una vez', 7500000], ['Diaria Monarch (30 días)', 4830000], ['Playtime (99 niveles)', 3916500], ['AuraSkills (11 habilidades al 100)', 2310000], ['Pase S2 premium', 1896000], ['Pase S2 gratis', 851000], ['Votos (30 días)', 540000], ['Diaria Aeris (30 días)', 330000]];
@@ -661,7 +662,7 @@ const B = {
     const pc = v => fmt(v) + ' %';
     const PUNT = { fish: 'Pez', common: 'Caja común', uncommon: 'Caja poco común', rare: 'Caja rara', epic: 'Caja épica', legendary: 'Caja legendaria', mythic: 'Caja mítica' };
     el.innerHTML = head('pesca', 'Pesca', 'La pesca de Ederus: cada captura trae una caja con premio. Qué sale, con qué probabilidad, qué cañas y carnadas compensan y lo que suma tu rango.', [['Peces', P.peces.length], ['Cañas', P.canas.length], ['Rarezas de caja', P.tiers.length]]) +
-      sect('Qué caja te sale', `<div class="cards">${P.tiers.map((t, i) => `<button type="button" class="cc glass spot rv pzcard" style="--d:${i * 50}ms" data-tier="${t.id}"><h3>${esc(t.n)}<span class="rank"><span class="pill tier-${TCOL[t.n] || 'D'}">${pc(t.pct)}</span></span></h3><div class="meter az"><i style="--w:${Math.max(.02, t.pct / P.tiers[0].pct)}"></i></div><div class="kv">${t.premios.slice(0, 4).map(p => `<span>${esc(p.n)}</span><span>${pc(p.pct)}</span>`).join('')}</div><span class="ct__more">Ver los ${(t.lista || []).length} premios <span aria-hidden="true">→</span></span></button>`).join('')}</div>`, '01', 'Probabilidad de cada rareza sin boosts, en la pesca normal. Toca una caja para ver todos sus premios.') +
+      sect('Qué caja te sale', `<div class="seg pz-zona" role="group" aria-label="Zona de pesca"><button type="button" class="on" data-z="normal">Pesca normal</button><button type="button" data-z="calamity">Pesca de Calamity</button></div><p class="mut sm pz-zona-txt"></p><div class="cards" id="pzcards"></div>`, '01', 'Probabilidad de cada rareza sin boosts. Toca una caja para ver todos sus premios.') +
       sect('Todos los premios', '<div id="tbp" class="rv"></div>', '02', 'La columna «Por captura» ya junta la probabilidad de la caja y la del premio dentro de ella.') +
       sect('Cañas', `<div class="cards">${P.canas.map((c, i) => `<div class="cc glass spot rv" style="--d:${i * 60}ms"><h3>${ico('fishing_rod')}${esc(c.n)}</h3><div class="kv"><span>Precio</span><span>${fmt(c.precio)} MC</span><span>Más cajas</span><span>+${fmt(c.cajas)} %</span><span>Suerte de rareza</span><span>+${fmt(c.suerte)} %</span><span>Pican antes</span><span>${fmt(c.mordida)} %</span></div></div>`).join('')}</div>`, '03', 'Se compran con MobCoins en la tienda de pesca.') +
       sect('Carnadas y funda', `<div class="cards">${P.carnadas.map((c, i) => `<div class="cc glass spot rv" style="--d:${i * 60}ms"><h3>${ico('spider_eye')}${esc(c.n)}</h3><div class="kv"><span>Precio</span><span>${fmt(c.precio)} MC</span><span>Usos por compra</span><span>${fmt(c.usos)} (máx. ${fmt(c.max)})</span><span>Más cajas</span><span>+${fmt(c.cajas)} %</span><span>Suerte de rareza</span><span>+${fmt(c.suerte)} %</span></div></div>`).join('')}<div class="cc glass spot rv"><h3>${ico('turtle_scute')}Funda anti-mordidas</h3><div class="kv"><span>Precio</span><span>${fmt(P.funda.precio)} MC</span><span>Protege</span><span>${fmt(P.funda.usos)} percances</span></div><p class="mut sm">Evita que un percance se lleve o se coma tu caña.</p></div></div>`, '04') +
@@ -671,10 +672,24 @@ const B = {
       sect('Pesca extrema', `<p class="note rv">Hay zonas de pesca extrema, como la del spawn de Calamity: la decide la zona, no el jugador. Dan un ${fmt(P.extrema.cajas)} % más de cajas y más suerte, pero el ${fmt(P.extrema.percance)} % de las capturas trae un percance (y un ${fmt(P.extrema.golpe)} %, un golpe de suerte). Lo que puede salir del agua: ${P.extrema.mobs.map(m => `<b>${esc(m.n)}</b> (${fmt(m.vida)} de vida, pega ${fmt(m.dano)}${m.golpe ? ` y te quita como mínimo el ${m.golpe} % de la vida` : ''})`).join(' y ')}. Los sets de la Marea y la Funda reducen el riesgo. Todo el detalle en <a href="#calamity/la-pesca-de-calamity">la pesca de Calamity</a>.</p><div id="tbx" class="rv"></div>`, '08') +
       sect('Torneos', `<div class="cards"><div class="cc glass spot rv"><h3>Puntos por captura</h3><div class="kv">${Object.entries(P.torneos.puntos).map(([k, v]) => `<span>${esc(PUNT[k] || k)}</span><span>${fmt(v)}</span>`).join('')}</div></div><div class="cc glass spot rv"><h3>Premios</h3><div class="kv">${Object.entries(P.torneos.premios).map(([k, v]) => `<span>${esc(k)}.º</span><span>${esc(v)}</span>`).join('')}</div></div></div>`, '09') +
       sect('Los cambios de Carpa', `<div class="cards">${P.carpa.map((c, i) => `<div class="cc glass spot rv" style="--d:${i * 50}ms"><h3>${esc(c.da)}</h3><div class="kv"><span>Pide</span><span>${esc(c.pide)}</span></div></div>`).join('')}</div>`, '10', 'Carpa, en el spawn de Calamity, mejora la Marea Celeste a Sangrienta.');
-    $$('.pzcard', el).forEach(b => b.addEventListener('click', () => { const t = P.tiers.find(x => x.id === b.dataset.tier);
-      openPremios({ kind: 'Pesca · caja ' + t.n.toLowerCase(), title: 'Caja ' + t.n, ic: 'fishing_rod', color: TC[TCOL[t.n] || 'D'], lista: t.lista, link: 'pesca/' + t.id,
-        sub: `<span class="pill tier-${TCOL[t.n] || 'D'}">${pc(t.pct)}</span> de las capturas sin boosts`, extra: f => `${fmt(Math.round(f.p * t.pct) / 100)} %` }); }));
-    table($('#tbp', el), [{ k: 'n', l: 'Premio' }, { k: 'caja', l: 'Caja' }, { k: 'tipo', l: 'Tipo' }, { k: 'pct', l: 'En su caja (%)', t: 'num' }, { k: 'real', l: 'Por captura (%)', t: 'num' }], P.tiers.flatMap(t => t.premios.map(p => ({ ...p, caja: t.n, real: Math.round(p.pct * t.pct) / 100 }))), { filters: ['caja', 'tipo'], sort: 'real', name: 'pesca-premios' });
+    // Dosa 02/11: elegir entre la pesca normal y la de Calamity (zona extrema del spawn de Calamity)
+    const ZONA = { normal: { tiers: P.tiers, n: 'normal', txt: 'En el spawn y en el resto de zonas normales.' },
+      calamity: { tiers: P.calamity, n: 'de Calamity', txt: 'En la zona de pesca del spawn de Calamity, junto a Carpa. Siempre es extrema: mejores premios, pero el 60 % de las capturas trae un percance. La caja Inmortal solo sale con la Marea Sangrienta completa.' } };
+    let zona = 'normal';
+    const pintaZona = () => {
+      const Z = ZONA[zona], T = Z.tiers, top = Math.max(...T.filter(t => !t.marea).map(t => t.pct));
+      $('.pz-zona-txt', el).textContent = Z.txt;
+      $('#pzcards', el).innerHTML = T.map((t, i) => `<button type="button" class="cc glass spot pzcard is-in" data-tier="${t.id}"><h3>${esc(t.n)}<span class="rank"><span class="pill tier-${TCOL[t.n] || 'D'}">${pc(t.pct)}</span></span></h3><div class="meter az"><i style="--w:${Math.max(.02, t.pct / top)}"></i></div><div class="kv">${(t.lista || []).slice(0, 4).map(p => `<span>${esc(p.n)}</span><span>${pc(p.p)}</span>`).join('')}</div>${t.marea ? '<p class="mut sm" style="margin:0">Solo con la Marea Sangrienta completa puesta.</p>' : ''}<span class="ct__more">Ver los ${(t.lista || []).length} premios <span aria-hidden="true">→</span></span></button>`).join('');
+      hydrate($('#pzcards', el));
+      $$('.pzcard', el).forEach(b => b.addEventListener('click', () => { const t = T.find(x => x.id === b.dataset.tier);
+        openPremios({ kind: `Pesca ${Z.n} · caja ${t.n.toLowerCase()}`, title: 'Caja ' + t.n, ic: 'fishing_rod', color: TC[TCOL[t.n] || 'D'], lista: t.lista, link: `pesca/${zona === 'calamity' ? 'calamity-' : ''}${t.id}`,
+          sub: `<span class="pill tier-${TCOL[t.n] || 'D'}">${pc(t.pct)}</span> de las capturas sin boosts${t.marea ? ', con la Marea Sangrienta completa' : ''}`, extra: f => `${fmt(Math.round(f.p * t.pct) / 100)} %` }); }));
+      const tb = $('#tbp', el); tb.innerHTML = '';
+      table(tb, [{ k: 'n', l: 'Premio' }, { k: 'caja', l: 'Caja' }, { k: 't', l: 'Tipo' }, { k: 'p', l: 'En su caja (%)', t: 'num' }, { k: 'real', l: 'Por captura (%)', t: 'num' }], T.flatMap(t => (t.lista || []).map(p => ({ n: p.n, t: p.t, p: p.p, caja: t.n, real: Math.round(p.p * t.pct) / 100 }))), { filters: ['caja', 't'], sort: 'real', name: 'pesca-premios-' + zona });
+    };
+    $$('.pz-zona button', el).forEach(b => b.addEventListener('click', () => { zona = b.dataset.z; $$('.pz-zona button', el).forEach(x => x.classList.toggle('on', x === b)); pintaZona(); }));
+    pintaZona();
+    el.pescaZona = z => { const b = $(`.pz-zona [data-z="${z}"]`, el); if (b) b.click(); };
     table($('#tbr', el), [{ k: 'rango', l: 'Rango' }, { k: 'cajas', l: 'Más cajas (%)', t: 'num' }, { k: 'suerte', l: 'Suerte (%)', t: 'num' }, { k: 'mordida', l: 'Pican antes (%)', t: 'num' }, { k: 'doble', l: 'Premio doble (%)', t: 'num' }, { k: 'talla', l: 'Peces más grandes (%)', t: 'num' }, { k: 'venta', l: 'Venta (%)', t: 'num' }, { k: 'percances', l: 'Menos percances (%)', t: 'num' }], P.rangos, { name: 'pesca-rangos' });
     table($('#tbf', el), [{ k: 'n', l: 'Pez' }, { k: 'rareza', l: 'Rareza' }, { k: 'zona', l: 'Dónde' }, { k: 'min', l: 'Talla mín. (cm)', t: 'num' }, { k: 'max', l: 'Talla máx. (cm)', t: 'num' }, { k: 'base', l: 'Precio base', t: 'num' }, { k: 'kg', l: 'Por kg', t: 'num' }], P.peces, { filters: ['rareza', 'zona'], sort: 'kg', name: 'pesca-peces' });
     table($('#tbx', el), [{ k: 'n', l: 'Percance' }, { k: 'pct', l: 'De los percances (%)', t: 'num' }], P.extrema.percances, { sort: 'pct', name: 'pesca-percances' });
