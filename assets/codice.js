@@ -163,10 +163,28 @@ const nav = $('#nav'), main = $('#main');
   hydrate(nav);
 }
 
+// objetos de cada sección para el arte de cabecera del tema Ederus (la guía normal no lo enseña)
+const VH_ART = {
+  'tl-armaduras': ['netherite_chestplate', 'diamond_helmet', 'golden_leggings', 'iron_boots', 'netherite_helmet', 'diamond_chestplate'],
+  'tl-armas': ['netherite_sword', 'bow', 'trident', 'mace', 'crossbow', 'diamond_axe'],
+  'tl-anomalias': ['nether_star', 'ender_eye', 'echo_shard', 'wither_rose', 'dragon_breath', 'blaze_rod'],
+  cajas: ['tripwire_hook', 'trial_key', 'ominous_trial_key', 'gold_ingot', 'emerald', 'diamond'],
+  encantamientos: ['enchanted_book', 'experience_bottle', 'lapis_lazuli', 'book', 'amethyst_shard', 'glowstone_dust'],
+  mazmorras: ['trial_key', 'iron_sword', 'ominous_trial_key', 'heavy_core', 'netherite_scrap', 'totem_of_undying'],
+  mascotas: ['bone', 'wolf_spawn_egg', 'cat_spawn_egg', 'allay_spawn_egg', 'cookie', 'lead'],
+  tags: ['name_tag', 'paper', 'writable_book', 'oak_sign', 'feather', 'ink_sac'],
+  economia: ['gold_ingot', 'emerald', 'gold_nugget', 'diamond', 'raw_gold', 'gold_block'],
+  progresion: ['experience_bottle', 'clock_00', 'map', 'compass_00', 'writable_book', 'recovery_compass_00'],
+  rangos: ['golden_helmet', 'diamond_helmet', 'netherite_helmet', 'nether_star', 'totem_of_undying', 'emerald'],
+  combate: ['iron_sword', 'bow', 'arrow', 'golden_apple', 'potion', 'rotten_flesh'],
+  calamity: ['goat_horn', 'wither_rose', 'netherite_hoe', 'echo_shard', 'rotten_flesh', 'fire_charge'],
+  pesca: ['fishing_rod', 'cod', 'salmon', 'tropical_fish', 'pufferfish', 'nautilus_shell'],
+  mundo: ['diamond_pickaxe', 'map', 'oak_sapling', 'wheat', 'bucket', 'iron_ingot'],
+};
 function head(id, title, p, stats = []) {
   const v = VI[id];
-  const art = v.ic ? `${CDN}1.21.4/items/${(ALIAS[v.ic] || v.ic)}.png` : '';
-  return `<header class="vh" data-v="${id}" style="--vh-art:url('${art}')"><nav class="crumbs" aria-label="Migas"><a href="#inicio">EDERUSDEX</a><span>›</span><span>${esc(v.g)}</span><span>›</span><b>${esc(v.t)}</b><em class="upd">Actualizado 31/10/2026</em></nav><h1>${split(title)}</h1>${p ? `<p>${p}</p>` : ''}${stats.length ? `<div class="stats">${stats.map(([k, b]) => `<span class="chip"><i></i>${k} <b>${b}</b></span>`).join('')}</div>` : ''}</header>`;
+  const art = (VH_ART[id] || []).map((ic, i) => `<img alt="" data-id="${ic}" class="a${i}">`).join('');
+  return `<header class="vh" data-v="${id}"><div class="vh__art" aria-hidden="true">${art}</div><nav class="crumbs" aria-label="Migas"><a href="#inicio">EDERUSDEX</a><span>›</span><span>${esc(v.g)}</span><span>›</span><b>${esc(v.t)}</b><em class="upd">Actualizado 31/10/2026</em></nav><h1>${split(title)}</h1>${p ? `<p>${p}</p>` : ''}${stats.length ? `<div class="stats">${stats.map(([k, b]) => `<span class="chip"><i></i>${k} <b>${b}</b></span>`).join('')}</div>` : ''}</header>`;
 }
 function sect(title, inner, n, sub) {
   return `<section class="sect"><div class="sect__h rv"><h2>${n ? `<small>${n}</small>` : ''}${title}</h2>${sub ? `<p>${sub}</p>` : ''}</div>${inner}</section>`;

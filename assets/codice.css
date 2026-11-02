@@ -853,3 +853,6 @@ main{view-transition-name:main-view}
 
 /* menú: la etiqueta (Hardcore, Jefes) va en su propia columna y no parte la fila en dos */
 .rail a.hot{grid-template-columns:22px 26px minmax(0,1fr) auto auto}
+
+/* arte de cabecera: solo lo usa el tema Ederus */
+.vh__art{display:none}
