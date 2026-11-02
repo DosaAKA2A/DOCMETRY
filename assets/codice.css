@@ -786,3 +786,9 @@ main{view-transition-name:main-view}
 
 /* las casillas con contorno (5 sombras) se pintan una vez y la GPU solo las mueve */
 .tt .slot .ic,.tt .slot .face{will-change:transform}
+
+/* rendimiento (02/11, medido con DevTools): el destello del contorno EX animaba una variable de color dentro de un filtro
+   y obligaba a recalcular estilos en cada fotograma (18 casillas a la vez en Encantamientos). Contorno morado fijo. */
+.glint,.tt .slot.glint .ic,.tt .slot.glint .face{animation:none!important}
+.tt .slot.glint .ic,.tt .slot.glint .face{--o:var(--ex)}
+.mast__rule .live::before{animation:none!important}  /* el parpadeo recalculaba estilos ~180 veces por segundo */
