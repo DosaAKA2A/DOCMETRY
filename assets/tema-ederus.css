@@ -123,3 +123,10 @@ h1,h2,h3,h4{font-family:var(--f-head);font-stretch:100%!important;letter-spacing
 .eyebrow,.crumbs,.upd,.lab,.pz__m,.pzc__p,.pzc__r,.mz__rank,.ct__more,.shop__tag,.mz__cofre,.mz__enc,.hot__tag,.sect__h h2 small,.rail .n,.tl-t small,.pz__p,.shop__mat b,.mctip,.ctip,.dr__bar .eyebrow,.chip,.calx-nav .tg small{letter-spacing:.08em}
 .mctip{font-family:var(--f-body);font-size:12.5px}
 .mctip .t{font-family:var(--f-head);font-weight:700;font-size:14px;letter-spacing:-.01em}
+
+/* los acentos de color propios de cada tarjeta se mantienen (franja del NPC, rojo de Calamity, oro de mazmorras, tono de cada tier) */
+.npc{box-shadow:inset 4px 0 0 var(--tono),var(--inset-top),var(--sh-2)!important}
+.calx-ess__i,.ct{box-shadow:inset 0 3px 0 var(--cal-sangre),var(--inset-top),var(--sh-2)!important}
+.mz{box-shadow:inset 0 3px 0 var(--mc-6),var(--inset-top),var(--sh-2)!important}
+.vh{box-shadow:inset 4px 0 0 var(--az),var(--inset-top),var(--sh-2)!important}
+.ct:hover,.npc:hover,.mz:hover,.calx-ess__i:hover{box-shadow:0 0 0 1px var(--violet),var(--sh-3)!important}
