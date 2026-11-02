@@ -870,3 +870,9 @@ main{view-transition-name:main-view}
 .pz-z.on{background:var(--zc);color:#fff;box-shadow:0 8px 24px -10px var(--zc)}
 .pz-z.on small{color:rgba(255,255,255,.85)}
 .pz-z:focus-visible{outline:3px solid #fff;outline-offset:2px}
+
+/* cajas de pesca con los colores reales de PremioPescao (tiers.yml) */
+.pzcaja{border-top:3px solid var(--cj)!important}
+.pzcaja h3{color:var(--cj)}
+.pzcaja__pct{background:var(--cj)!important;color:#0b0a16!important}
+.pzcaja:hover{border-color:var(--cj)!important}

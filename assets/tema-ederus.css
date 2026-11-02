@@ -180,3 +180,6 @@ h1,h2,h3,h4{font-family:var(--f-head);font-stretch:100%!important;letter-spacing
 
 /* el selector de pesca conserva su azul / rojo (no el degradado de la marca) */
 .pz-z b{font-family:var(--f-head);font-weight:700;letter-spacing:-.01em}
+
+/* cajas de pesca: su color real en el borde en degradado */
+.pzcaja{border-top-width:1px!important;background:var(--panel-fondo) padding-box,linear-gradient(160deg,var(--cj),rgba(97,60,244,.2)) border-box!important}
