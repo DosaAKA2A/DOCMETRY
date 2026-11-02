@@ -264,21 +264,21 @@ function table(el, cols, rows, opt = {}) {
 function tierlist(el, items, o) {
   const tiers = o.tiers, groups = o.groups; let q = '', off = new Set(), offT = new Set(), cols = false, first = true;  // Dosa 02/11: «Todo junto» por defecto
   const sorted = [...items].sort((a, b) => o.value(b) - o.value(a));
-  const fv = o.fmtv || fmt, tn = t => (o.tierName ? o.tierName(t) : t);
+  const fv = o.fmtv || fmt, tn = t => (o.tierName ? o.tierName(t) : t), tc = t => (o.tierColor ? o.tierColor(t) : TC[t]);
   const rng = t => { const v = sorted.filter(i => i.tier === t).map(o.value); if (!v.length) return 'sin entradas'; const mn = Math.min(...v), mx = Math.max(...v); return mn === mx ? fv(mn) : fv(mn) + ' – ' + fv(mx); };
   const cntT = t => sorted.filter(i => i.tier === t).length;
   el.innerHTML = `<div class="tlbar">
     <div class="tlbar__row"><label class="field">${SVG.search}<input type="search" placeholder="Buscar por nombre…" aria-label="Buscar en la tier list"></label>
       <div class="seg" role="group" aria-label="Columnas"><button type="button" class="on" data-cols="0">Todo junto</button><button type="button" data-cols="1">Por ${esc(o.groupLabel)}</button></div>
       <span class="cnt"></span><button type="button" class="icon-btn reset">${SVG.reset}Restablecer</button></div>
-    <div class="tlbar__row"><span class="lab">Tier</span><div class="chips">${tiers.map(t => `<button type="button" class="tchip on${tn(t).length > 2 ? ' largo' : ''}" data-t="${t}" style="--tc:${TC[t]}" aria-pressed="true" title="${cntT(t)} en tier ${tn(t)}">${tn(t)}</button>`).join('')}</div>
+    <div class="tlbar__row"><span class="lab">Tier</span><div class="chips">${tiers.map(t => `<button type="button" class="tchip on${tn(t).length > 2 ? ' largo' : ''}" data-t="${t}" style="--tc:${tc(t)}" aria-pressed="true" title="${cntT(t)} en tier ${tn(t)}">${tn(t)}</button>`).join('')}</div>
       <span class="lab">${esc(o.groupLabel)}</span><div class="chips">${groups.map(g => `<button type="button" class="tg on" data-g="${esc(g)}" aria-pressed="true">${esc(g)} <small>${sorted.filter(i => o.group(i) === g).length}</small></button>`).join('')}</div></div>
   </div><div class="tl"></div>`;
   const tl = $('.tl', el), cnt = $('.cnt', el);
   function card(it, i) {
     const d = document.createElement('div'); d.className = 'tt'; d.tabIndex = 0; d.setAttribute('role', 'button');
     d.dataset.n = norm(it[o.name]); d.dataset.g = o.group(it); d.dataset.id = it.id;
-    d.style.setProperty('--c', TC[it.tier]); d.style.setProperty('--i', Math.min(i, 60));
+    d.style.setProperty('--c', tc(it.tier)); d.style.setProperty('--i', Math.min(i, 60));
     d.setAttribute('aria-label', `${it[o.name]}, tier ${tn(it.tier)}`);
     if (o.tip) d.dataset.tip = o.tip + ':' + it.id;
     d.innerHTML = `<span class="slot${it.tier === 'EX' ? ' glint' : ''}">${o.icon(it)}</span><span class="nm">${esc(it[o.name])}</span><span class="pw">${o.label ? o.label(it) : fmt(o.value(it))}</span>`;
@@ -289,7 +289,7 @@ function tierlist(el, items, o) {
     const gs = cols ? groups : ['Todos'];
     tl.style.setProperty('--nc', gs.length); tl.classList.toggle('one', !cols);
     tl.innerHTML = `<div class="tl-scroll"><div class="tl-grid">${cols ? `<div class="tl-cols"><div>Tier</div>${gs.map(g => `<div>${esc(g)}</div>`).join('')}</div>` : ''}
-      ${tiers.map(t => `<div class="tl-row" data-t="${t}" style="--tc:${TC[t]}"><div class="tl-t${tn(t).length > 2 ? ' largo' : ''}"><b>${tn(t)}</b><small>${o.rng ? o.rng(t) : rng(t)}</small><span>${cntT(t)}</span></div>${gs.map(g => `<div class="tl-c" data-t="${t}" data-g="${esc(g)}"></div>`).join('')}</div>`).join('')}</div></div>`;
+      ${tiers.map(t => `<div class="tl-row" data-t="${t}" style="--tc:${tc(t)}"><div class="tl-t${tn(t).length > 2 ? ' largo' : ''}"><b>${tn(t)}</b><small>${o.rng ? o.rng(t) : rng(t)}</small><span>${cntT(t)}</span></div>${gs.map(g => `<div class="tl-c" data-t="${t}" data-g="${esc(g)}"></div>`).join('')}</div>`).join('')}</div></div>`;
     sorted.forEach((it, i) => { const c = tl.querySelector(`.tl-c[data-t="${it.tier}"][data-g="${CSS.escape(cols ? o.group(it) : 'Todos')}"]`); if (c) c.appendChild(card(it, i)); });
     apply(); hydrate(tl);
     if (!first) tl.classList.add('is-in'); first = false;
@@ -462,13 +462,15 @@ function anDetail(a) {
     extra: tab });
 }
 // Ficha de un encantamiento (Dosa 01/11): cada libro con su nivel, lo que da y su nombre en inglés
+// colores de cada tier en AdvancedEnchantments (groups.yml → global-color): los mismos que los libros en el juego
+const AE_C = { Simple: '#AAAAAA', Único: '#55FF55', Elite: '#55FFFF', Supremo: '#FFFF55', Legendario: '#FFAA00', Ancestral: '#FF55FF' };
 const ENC_TC = { Simple: 'D', Único: 'C', Elite: 'B', Supremo: 'A', Legendario: 'S', Ancestral: 'EX' };
 const ROM = n => ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'][n] || String(n);
 function encDetail(e) {
   const t = ENC_TC[e.tier] || 'D';
   const libros = (e.lv || []).map((l, i) => `<div class="book" style="--i:${i}"><span class="slot${t === 'EX' ? ' glint' : ''}">${ico('enchanted_book')}</span><div><b>${esc(e.nombre)} ${ROM(l.n)}</b><small>${esc(e.en)} ${ROM(l.n)}</small>
     <dl>${l.filas.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl></div></div>`).join('');
-  openDrawer({ kind: 'Encantamiento · ' + e.tier, title: e.nombre, art: ico('enchanted_book', null, 1), color: TC[t], link: 'encantamientos/' + e.id,
+  openDrawer({ kind: 'Encantamiento · ' + e.tier, title: e.nombre, art: ico('enchanted_book', null, 1), color: AE_C[e.tier] || TC[t], link: 'encantamientos/' + e.id,
     sub: `<span class="pill tier-${t}">${esc(e.tier)}</span> En inglés: <b>${esc(e.en)}</b>`,
     kv: [['Nombre en inglés', esc(e.en)], ['Tier', `<span class="pill tier-${t}">${esc(e.tier)}</span>`], ['Para', esc(e.para)], ['Niveles', fmt(e.niveles)]],
     extra: (e.desc ? `<div><h4>Qué hace</h4><p class="encdesc">${esc(e.desc)}</p></div>` : '') + (libros ? `<div><h4>Libros por nivel</h4><div class="books">${libros}</div></div>` : '') });
@@ -614,9 +616,9 @@ const B = {
     BYID.e = new Map(items.map(x => [String(x.id), x]));
     el.innerHTML = head('encantamientos', 'Encantamientos', `Los ${D.encantamientos.length} de AdvancedEnchantments, por tier. Pasa el ratón para ver su efecto al nivel máximo; tócalo para ver cada libro. Libros: /xpshop (Simple a Legendario), Bóveda, cajas, pase, cofres PvP.`, Object.keys(tc).reverse().map(t => [t, D.encantamientos.filter(e => e.tier === t).length]).filter(x => x[1])) +
       '<div id="tl"></div>' + sect('Lista completa', '<div id="tb" class="rv"></div>', 'DB', 'Para buscar por efecto o filtrar por objeto.') + fichas('encantamientos');
-    tierlist($('#tl', el), items, { groups: G.filter(g => items.some(x => x.g === g)), tiers: ['EX', 'S', 'A', 'B', 'C', 'D'], tierName: t => TN[t], rng: () => "",
+    tierlist($('#tl', el), items, { groups: G.filter(g => items.some(x => x.g === g)), tiers: ['EX', 'S', 'A', 'B', 'C', 'D'], tierName: t => TN[t], tierColor: t => AE_C[TN[t]], rng: () => "",
       group: x => x.g, groupLabel: 'objeto', name: 'nombre', value: x => x.n, label: x => `Nivel ${ROM(x.n)}`, icon: x => ico(icp(x.para || ''), null, 1), detail: e => encDetail(D.encantamientos.find(y => y.id === e.id)), tip: 'e' });
-    table($('#tb', el), [{ k: 'nombre', l: 'Encantamiento', render: (r, re) => `<b>${hl(r.nombre, re)}</b>` }, { k: 'tier', l: 'Tier', sv: r => ord[r.tier] || 0, render: r => `<span class="pill tier-${tc[r.tier]}">${esc(r.tier)}</span>` }, { k: 'para', l: 'Para' }, { k: 'niveles', l: 'Niveles', t: 'num' }, { k: 'efecto', l: 'Efecto al nivel máximo' }], D.encantamientos, { filters: ['tier', 'para'], sort: 'tier', dir: -1, name: 'encantamientos', onRow: encDetail });
+    table($('#tb', el), [{ k: 'nombre', l: 'Encantamiento', render: (r, re) => `<b>${hl(r.nombre, re)}</b>` }, { k: 'tier', l: 'Tier', sv: r => ord[r.tier] || 0, render: r => `<span class="pill" style="background:${AE_C[r.tier]};color:#0b0a16">${esc(r.tier)}</span>` }, { k: 'para', l: 'Para' }, { k: 'niveles', l: 'Niveles', t: 'num' }, { k: 'efecto', l: 'Efecto al nivel máximo' }], D.encantamientos, { filters: ['tier', 'para'], sort: 'tier', dir: -1, name: 'encantamientos', onRow: encDetail });
   },
   mazmorras(el) {
     // Dosa 02/11: las mazmorras en sí (requisitos, jefe, tropa con su botín, cofres, encargos y tiendas), no solo la lista de mobs
@@ -819,7 +821,7 @@ const TIPF = {
   n: a => `<span class="t" style="color:${TC[a.tier]}">${esc(a.nombre)}</span><span class="sub">${esc(a.clase)} · ${esc(a.bioma || '')}</span>${r('Vida', fmt(a.vida))}${r('Daño medio', fmt(Math.round(a.dano_real)))}${r('Habilidades', fmt(a.habilidades))}${r('MobCoins', fmt(a.mobcoins))}<span class="l">Tier ${a.tier} · clic para ver la ficha</span>`
 };
 let tipEl = null;
-TIPF.e = x => `<span class="t" style="color:${TC[x.tier]}">${esc(x.nombre)}</span><span class="sub">${esc(x.tn)} · ${esc(x.para || '')}</span>${x.desc ? `<span class="pt-lh" style="color:var(--mc-7)">${esc(x.desc)}</span>` : ''}${r('Niveles', fmt(x.niveles))}${x.efecto ? `<span class="pt-h">Al nivel máximo</span><span class="pt-in">${esc(x.efecto)}</span>` : ''}<span class="l">Clic para ver cada libro</span>`;
+TIPF.e = x => `<span class="t" style="color:${AE_C[x.tn] || TC[x.tier]}">${esc(x.nombre)}</span><span class="sub">${esc(x.tn)} · ${esc(x.para || '')}</span>${x.desc ? `<span class="pt-lh" style="color:var(--mc-7)">${esc(x.desc)}</span>` : ''}${r('Niveles', fmt(x.niveles))}${x.efecto ? `<span class="pt-h">Al nivel máximo</span><span class="pt-in">${esc(x.efecto)}</span>` : ''}<span class="l">Clic para ver cada libro</span>`;
 TIPF.p = f => premioTip(f);
 TIPF.m = f => premioTip({ ...f, p: undefined });
 const placeTip = e => { const w = mctip.offsetWidth, h = mctip.offsetHeight; let x = e.clientX + 18, y = e.clientY - 12; if (x + w > innerWidth - 8) x = e.clientX - w - 18; if (y + h > innerHeight - 8) y = innerHeight - h - 8; mctip.style.transform = `translate(${x}px,${Math.max(8, y)}px)`; };
