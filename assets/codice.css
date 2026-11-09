@@ -883,3 +883,22 @@ main{view-transition-name:main-view}
 .enc-sub .ic{width:22px!important;height:22px!important;filter:none!important}
 /* rareza en las casillas: texto blanco legible (Dosa 02/11) */
 .pzc__r{color:#fff!important;font-weight:700;text-shadow:0 1px 0 rgba(0,0,0,.55),0 0 2px rgba(0,0,0,.6);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- móvil (Dosa 09/11: «innavegable en mobile»). Solo pantallas estrechas o táctiles: el escritorio no cambia ---------- */
+@media (max-width:960px){
+  /* el menú es fijo pero sigue siendo hijo de la rejilla .shell: con align-self:start medía lo que su contenido,
+     se subía detrás de la barra superior y los últimos apartados quedaban fuera de la pantalla sin poder desplazarse.
+     Estirado ocupa justo el hueco bajo la barra y hace scroll por dentro */
+  .rail{align-self:stretch;overscroll-behavior:contain}
+}
+@media (max-width:640px){
+  /* la ficha sube desde abajo: con la barra del navegador del móvil, 90vh tapaba la cruz de cerrar */
+  .dr{height:min(90dvh,100%)}
+  /* las tablas no atrapan el dedo con su propio scroll vertical: la página baja entera y la tabla solo se desliza de lado */
+  .tw{max-height:none}
+}
+@media (hover:none) and (pointer:coarse){
+  /* en el iPhone, un campo con letra de menos de 16px amplía la página al tocarlo y la deja cortada por la derecha */
+  input,select,textarea{font-size:16px!important}
+  .pal__foot{display:none}  /* atajos de teclado: no sirven en el móvil */
+}
