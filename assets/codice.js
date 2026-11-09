@@ -187,7 +187,7 @@ const VH_ART = {
 function head(id, title, p, stats = []) {
   const v = VI[id];
   const art = (VH_ART[id] || []).slice(0, 1).map(ic => `<span class="vh__disco"></span><img alt="" data-id="${ic}" class="vh__obj">`).join('');
-  return `<header class="vh" data-v="${id}"><div class="vh__art" aria-hidden="true">${art}</div><nav class="crumbs" aria-label="Migas"><a href="#inicio">EDERUSDEX</a><span>›</span><span>${esc(v.g)}</span><span>›</span><b>${esc(v.t)}</b><em class="upd">Actualizado 31/10/2026</em></nav><h1>${split(title)}</h1>${p ? `<p>${p}</p>` : ''}${stats.length ? `<div class="stats">${stats.map(([k, b]) => `<span class="chip"><i></i>${k} <b>${b}</b></span>`).join('')}</div>` : ''}</header>`;
+  return `<header class="vh" data-v="${id}"><div class="vh__art" aria-hidden="true">${art}</div><nav class="crumbs" aria-label="Migas"><a href="#inicio">EDERUSDEX</a><span>›</span><span>${esc(v.g)}</span><span>›</span><b>${esc(v.t)}</b><em class="upd">Actualizado 09/11/2026</em></nav><h1>${split(title)}</h1>${p ? `<p>${p}</p>` : ''}${stats.length ? `<div class="stats">${stats.map(([k, b]) => `<span class="chip"><i></i>${k} <b>${b}</b></span>`).join('')}</div>` : ''}</header>`;
 }
 function sect(title, inner, n, sub) {
   return `<section class="sect"><div class="sect__h rv"><h2>${n ? `<small>${n}</small>` : ''}${title}</h2>${sub ? `<p>${sub}</p>` : ''}</div>${inner}</section>`;
@@ -552,11 +552,11 @@ const B = {
     const toc = VIEWS.filter(v => v.id !== 'inicio').map(v => { const g = v.g !== lastG ? `<div class="grp">${v.g}</div>` : ''; lastG = v.g; n++;
       return g + `<a href="#${v.id}"><span class="no">${pad(n)}</span><span class="slot">${ico(v.ic)}</span><h3>${v.t}</h3><p>${v.d}</p><span class="ct">${v.n ? NF.format(v.n()) + ' entradas' : 'Sistema'}</span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>`; }).join('');
     el.innerHTML = `<section class="mast">
-      <div class="mast__rule"><span class="live"><b>Datos del servidor</b> · 31/10/2026</span><span>Ederus · Survival</span><span>${NF.format(total)} fichas</span><span>Edición pública</span></div>
+      <div class="mast__rule"><span class="live"><b>Datos del servidor</b> · 09/11/2026</span><span>Ederus · Survival</span><span>${NF.format(total)} fichas</span><span>Edición pública</span></div>
       <div class="mast__word"><h1 aria-label="EDERUSDEX">${word}</h1></div>
       <div class="mast__grid">
         <div class="mast__lead"><p>La guía del Survival de Ederus, medida al detalle: qué equipo pega más, qué jefe aguanta más y cuánto vale cada cosa.</p>
-          ${PUB ? '<small>Equipo, jefes, cajas, economía y rangos del Survival a 31/10/2026, sacados de la configuración real. Toca cualquier objeto para ver su ficha.</small>' : ''}
+          ${PUB ? '<small>Equipo, jefes, cajas, economía y rangos del Survival a 09/11/2026, sacados de la configuración real. Toca cualquier objeto para ver su ficha.</small>' : ''}
           <div class="mast__cta"><a class="btn btn--p" href="#tl-armaduras">Ver las tier lists ${SVG.arrow}</a><button type="button" class="btn" data-open-search>${SVG.search.replace('stroke-width="2"', 'stroke="currentColor" stroke-width="2.5"')}Buscar <kbd>${MAC ? '⌘' : 'Ctrl'} K</kbd></button></div></div>
         <div class="mast__inv"><div class="inv-h"><span><b>Inventario de élite</b> · lo mejor de cada lista</span><span>Fila 1 armaduras · 2 armas · 3 anomalías</span></div>
           <div class="inv">${inv}</div><div class="inv-note">Pasa el ratón por una casilla para ver sus estadísticas. Haz clic para abrir la ficha.</div></div>
